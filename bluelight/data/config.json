@@ -2,25 +2,25 @@
     "DICOMWebServersConfig": [
         {
             "AETitle": "YMOrthanc",
-            "enableHTTPS": true,
-            "hostname": "orthanc.dicom.tw",
-            "PORT": 443,
+            "enableHTTPS": false,
+            "hostname": "localhost",
+            "PORT": 9090,
             "contentType": "application/json",
             "timeout": 80000,
             "charset": "UTF=8",
             "QIDO": "dicom-web",
-            "WADO": "wado",
+            "WADO": "api/dicom/wado",
             "STOW": "stow",
             "enableRetrieveURI": false,
             "includefield": false,
-            "target": "https://cylab-tw.github.io/bluelight/bluelight/html/start.html",
+            "target": "http://localhost:9090/BL/bluelight/bluelight/html/start.html",
             "token": ""
         },
         {
             "AETitle": "ldcmPACS",
-            "enableHTTPS": true,
-            "hostname": "orthanc.dicom.tw",
-            "PORT": 443,
+            "enableHTTPS": false,
+            "hostname": "localhost",
+            "PORT": 9090,
             "contentType": "application/json",
             "timeout": 80000,
             "charset": "UTF=8",
@@ -29,7 +29,7 @@
             "STOW": "stow",
             "enableRetrieveURI": false,
             "includefield": false,
-            "target": "https://cylab-tw.github.io/bluelight/bluelight/html/start.html",
+            "target": "http://localhost:9090/BL/bluelight/bluelight/html/start.html",
             "token": ""
         }
     ],
