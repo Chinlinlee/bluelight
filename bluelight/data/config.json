@@ -14,6 +14,9 @@
             "enableRetrieveURI": false,
             "includefield": false,
             "target": "http://localhost:9090/BL/bluelight/bluelight/html/start.html",
+            "enableXml2Dcm":false,
+            "Xml2DcmUrl":"/upload",
+            "target": "https://cylab-tw.github.io/bluelight/bluelight/html/start.html",
             "token": ""
         },
         {
@@ -30,6 +33,9 @@
             "enableRetrieveURI": false,
             "includefield": false,
             "target": "http://localhost:9090/BL/bluelight/bluelight/html/start.html",
+            "enableXml2Dcm":false,
+            "Xml2DcmUrl":"/upload",
+            "target": "https://cylab-tw.github.io/bluelight/bluelight/html/start.html",
             "token": ""
         }
     ],
