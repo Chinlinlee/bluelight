@@ -85,6 +85,7 @@ function html_onload() {
           }
           load(100).then(() => {
             readXML(url);
+            console.log(PatientMark);
             readDicom(url, PatientMark, true);
           });
           //}

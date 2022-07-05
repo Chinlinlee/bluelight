@@ -316,6 +316,20 @@ function wadorsLoader(url) {
     return getData();
 }
 function parseDicom2(image, pixelData, currX1, currY1, viewportNum0) {
+
+    //store dicom set
+    let parsedDicomSet = {
+        [image.data.string("x0020000d")] : {
+            [image.data.string("x0020000e")]: {
+                [image.data.string("x00080018")]: image,
+                SeriesDescription: image.data.string("x0008103e")
+            },
+            PatientName: image.data.string("x00100010")
+        }
+    };
+    _.merge(parsedDicomList, parsedDicomSet);
+
+
     var viewportNum;
     if (viewportNum0 >= 0) viewportNum = viewportNum0;
     else viewportNum = viewportNumber;

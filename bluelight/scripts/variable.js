@@ -146,6 +146,8 @@ var Patient = {};
 var getPatientbyImageID = {};
 //裝標記的物件
 var PatientMark = [];
+// store parsed dicom files' dicom tags
+var parsedDicomList = {};
 //裝DICOM Tags設定檔的物件
 var DicomTags = {};
 //裝伺服器設定檔的物件

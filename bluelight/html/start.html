@@ -65,10 +65,24 @@
     width:100%;
     height:100%;
   }
+
   .innerLabel{
     font-size: calc(0.4rem + 0.1*((5vw)));
   }
+
+  .AI-SERVICE-IMG {
+    cursor: pointer;
+  }
+
+  .swal2-select, .swal2-validation-message {
+    width: 100%;
+  }
+  .swal2-validation-message {
+    margin: 0 -.6em!important;
+  }
   </style>
+  <link rel="stylesheet" href="../scripts/external/sweetalert2/sweetalert2.dark.min.css">
+  <link rel="stylesheet" href="../scripts/external/freezeUI/freeze-ui.min.css">
 </head>
 
 <body style="background-color:#000000;" onmousewheel="/*return false;*/">
@@ -105,6 +119,7 @@
     <img class="img GSPS" alt="writeGSPS" id="writeGSPS" src="../image/icon/black/gsps_off.png" width="50" height="50">
     <img class="img RTSS" alt="writeRTSS" id="writeRTSS" src="../image/icon/black/rtssdraw_OFF.png" width="50" height="50">
     <img class="img SEG" alt="writeSEG" id="writeSEG" src="../image/icon/black/seg_off.png" width="50" height="50">
+    <img class="img AI-SERVICE-IMG" alt="ai service" id="aiServiceImg" src="../image/icon/black/ai-service.png" width="50" height="50">
 
     <img class="img PEN" alt="輸出標記" id="openPenfile" src="../image/icon/black/openPenfile.png" style="display:none;" width="50" height="50">
     <img class="img VR MPR XML PEN" alt="RWD" id="rwdImgTag" src="../image/icon/black/b_CineTools.png" style="display:none;" width="50"
@@ -303,3 +318,6 @@
 </body>
 
 </html>
+<script src="../scripts/external/sweetalert2/sweetalert2.min.js"></script>
+<script src="../scripts/external/freezeUI/freeze-ui.min.js"></script>
+<script src="../scripts/ai-service.js"></script>
