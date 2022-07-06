@@ -390,6 +390,9 @@ function readConfigJson(url, readAllJson, readJson) {
     tempConfig.enableXml2Dcm = tempResponse["enableXml2Dcm"];
     tempConfig.Xml2DcmUrl = tempResponse["Xml2DcmUrl"];
 
+    config.AIService = {};
+    config.AIService = DicomResponse["aiService"];
+
     Object.assign(ConfigLog, config);
     configOnload = true;
 

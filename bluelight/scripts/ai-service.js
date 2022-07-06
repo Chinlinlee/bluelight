@@ -1,3 +1,5 @@
+//ConfigLog from  bluelight/scripts/onload.js -> function readConfigJson:341
+
 let modalAIService;
 const Toast = Swal.mixin({
     toast: true,
@@ -15,94 +17,11 @@ const Toast = Swal.mixin({
 
 document.onreadystatechange = function () {
     if (document.readyState === "complete") {
-        console.log("ready");
         let aiServiceImg = document.querySelector(".AI-SERVICE-IMG");
         aiServiceImg.onclick = aiServiceImgClick;
     }
 };
 
-function defaultStudySelect(selectElement) {
-    let urlQueryString = window.location.search;
-    let searchParams = new URLSearchParams(urlQueryString);
-    let studyInstanceUID =
-        searchParams.get("StudyInstanceUID") || searchParams.get("0020000D");
-    if (studyInstanceUID) {
-        let options = selectElement.options;
-        for (let i = 0; i < options.length; i++) {
-            let option = options[i];
-            let optionValue = option.value;
-            if (optionValue === studyInstanceUID) {
-                selectElement.selectedIndex = i;
-                selectElement.dispatchEvent(new Event("change"));
-            }
-        }
-    }
-}
-
-function buildStudySelectElement() {
-    let select = document.createElement("select");
-    select.classList.add("swal2-select");
-    select.style.display = "flex";
-    select.id = "selectStudy";
-    let placeholderOption = document.createElement("option");
-    placeholderOption.disabled = "";
-    placeholderOption.value = "";
-    placeholderOption.text = "Please select a study";
-    select.appendChild(placeholderOption);
-    for (let studyUID in parsedDicomList) {
-        let studyDataSet = parsedDicomList[studyUID];
-        let patientName = studyDataSet.PatientName;
-        let studyOption = document.createElement("option");
-        studyOption.value = studyUID;
-        studyOption.text = `${patientName} - ${studyUID}`;
-        select.appendChild(studyOption);
-    }
-
-    select.onchange = function () {
-        let selectedStudyUID = this.value;
-        removeSeriesSelectElements();
-        hideValidationMessage();
-        if (selectedStudyUID) {
-            appendSeriesSelectElement(selectedStudyUID);
-        }
-    };
-
-    return select;
-}
-
-function appendSeriesSelectElement(studyUID) {
-    let select = document.createElement("select");
-    select.classList.add("swal2-select");
-    select.classList.add("select-series");
-    select.id = "selectSeriesT1c";
-    select.style.display = "flex";
-    let placeholderOption = document.createElement("option");
-    placeholderOption.disabled = "";
-    placeholderOption.value = "";
-    placeholderOption.text = "Please select a t1c series";
-    select.appendChild(placeholderOption);
-
-    let studyDataSet = parsedDicomList[studyUID];
-    for (let seriesUID in studyDataSet) {
-        if (seriesUID === "PatientName") continue;
-        let seriesDataSet = studyDataSet[seriesUID];
-        let seriesOption = document.createElement("option");
-        seriesOption.value = seriesUID;
-        seriesOption.text = `${seriesDataSet.SeriesDescription} - ${seriesUID}`;
-        select.appendChild(seriesOption);
-    }
-    select.onchange = function () {
-        hideValidationMessage();
-    };
-
-    let swalDocument = Swal.getHtmlContainer();
-    swalDocument.append(select);
-
-    let t2SeriesSelect = select.cloneNode(true);
-    t2SeriesSelect.options[0].text = "Please select a t2c series";
-    t2SeriesSelect.id = "selectSeriesT2";
-    swalDocument.append(t2SeriesSelect);
-}
 
 function removeSeriesSelectElements() {
     let swalDocument = Swal.getHtmlContainer();
@@ -113,61 +32,43 @@ function removeSeriesSelectElements() {
     return true;
 }
 
-async function aiServiceImgClick() {
-    let studySelect = buildStudySelectElement();
-    let { value } = await Swal.fire({
-        title: "AI Service",
-        html: "<span style='color: #F0F0F0'><strong>study:</strong></span>",
-        didOpen: () => {
-            let swalDocument = Swal.getHtmlContainer();
-            swalDocument.append(studySelect);
-            defaultStudySelect(studySelect);
-        },
-        focusConfirm: false,
-        preConfirm: () => {
-            let swalDocument = Swal.getHtmlContainer();
-            let studyUID = swalDocument.querySelector("#selectStudy").value;
-            if (!studyUID) {
-                Swal.showValidationMessage(`You need to select study UID`);
-                return;
-            } else {
-                let seriesT1cUID =
-                    swalDocument.querySelector("#selectSeriesT1c").value;
-                let seriesT2UID =
-                    swalDocument.querySelector("#selectSeriesT2").value;
-                if (!seriesT1cUID) {
-                    Swal.showValidationMessage(
-                        `You need to select series T1c UID`
-                    );
-                    return;
-                }
-                if (!seriesT2UID) {
-                    Swal.showValidationMessage(
-                        `You need to select series T2 UID`
-                    );
-                    return;
-                }
-                return {
-                    studyInstanceUID: studyUID,
-                    seriesInstanceUIDList: [seriesT1cUID, seriesT2UID]
-                };
-            }
-        }
-    });
-    if (value) {
-        FreezeUI();
-        getAIVestibularSchwannomaRTSSDicom(
-            "http://192.168.147.128:8087/ai-service/vestibular-schwannoma",
-            value
-        );
-    }
-}
+const aiServiceClassMap = {
+    "Vestibular Schwannoma": VestibularSchwannomaAIService.createAIServiceComponent
+};
 
-function buildValidationMessage(text) {
-    let div = document.createElement("div");
-    div.classList.add("swal2-validation-message");
-    div.id = "swal2-validation-message";
-    div.text = text;
+async function aiServiceImgClick() {
+    let supportedAIService;
+    try {
+        supportedAIService = await AIService.getSupportAIService();
+    } catch(e) {
+        console.error(e);
+        Swal.fire({
+            icon: "error",
+            title: "The request of AI service failed, maybe AI service is not available"
+        });
+        return;
+    }
+    
+    if (supportedAIService) {
+        let aiServicesBtnList = [];
+        for (let service of supportedAIService) {
+            console.log(service.name);
+            let btn = AIService.buildServiceButtonElement(service.name);
+            btn.onclick = aiServiceClassMap[service.name];
+            aiServicesBtnList.push(btn);
+        }
+        let { value } = await Swal.fire({
+            title: "AI Service",
+            html: "<div></div>",
+            didOpen: () => {
+                let swalDocument = Swal.getHtmlContainer();
+                swalDocument.style.display = "flex";
+                for (let btn of aiServicesBtnList) {
+                    swalDocument.append(btn);
+                }
+            }
+        });
+    }
 }
 
 function hideValidationMessage() {
@@ -191,6 +92,11 @@ function getAIVestibularSchwannomaRTSSDicom(url, requestBody) {
                     icon: "success",
                     title: "Vestibular Schwannoma AI execution completed"
                 });
+            } else {
+                Toast.fire({
+                    icon: "error",
+                    title: "AI Execution failure"
+                })
             }
         }
     };
