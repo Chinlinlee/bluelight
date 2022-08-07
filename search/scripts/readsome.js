@@ -245,6 +245,11 @@ function readJson(url) {
   originWADOUrl = originWADOUrl.replace("?", "");
   var request = new XMLHttpRequest();
   request.open('GET', requestURL);
+
+  if (oauthConfig.enable) {
+    OAuth.setRequestHeader(request);
+  }
+  
   request.responseType = 'json';
   request.send();
   onloadList.push(0);

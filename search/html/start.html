@@ -14,8 +14,25 @@
   <script src="../scripts/readsome.js"></script>
   <script src="../scripts/onload.js"></script>
 
-  <link rel="stylesheet" href="../css/bootstrap.min.css"
-    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="..//css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <style>
+    .oauth-login {
+      cursor: pointer;
+    }
+    .oauth-login::before {
+      display: inline-block;
+      content: "";
+      width: 50px;
+      height: 50px;
+      background-image: url("../../bluelight/image/icon/black/login.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      right: 0.25em;
+      bottom: 0.15em;
+      position: absolute;
+    }
+  </style>
 </head>
 <style>
   .PatientRow:hover {
@@ -70,7 +87,7 @@
 <body style="background-color:#000000;color:#FFFFFF" onkeypress="kerypressT(event);">
   
 
-</body>
+
 <div style="margin-top: 7px;">
   <!--&nbsp;&nbsp;Password:<input type="password" name="lname" value="123" id="PasswordText" class="btn btn-dark text-left">-->
 
@@ -184,7 +201,7 @@
   ">&#8250;</button>
 </div><div class="center"><span id="loadingSpan"  class="center"> Loading...</span></div>
 <div id="body"></div>
-<div class="center">
+<div class="center" style="position: relative;">
   <button class="previous btn btn-dark" onclick="
   getByid('OffsetInput').value= parseInt(getByid('OffsetInput').value)- parseInt(getByid('LimitInput').value);
   getByid('searchButton').click();
@@ -199,9 +216,13 @@
   getByid('OffsetInput').value= parseInt(getByid('OffsetInput').value)+ parseInt(getByid('LimitInput').value);
   getByid('searchButton').click();
   ">&#8250;</button>
+  <span class="oauth-login"></span>
 </div>
 <!--<header class="page-header" style="display:none">
   </header>-->
 </body>
 
 </html>
+<script src="../../oauth/js/config.js"></script>
+<script src="../../oauth/js/oauth.js"></script>
+<script src="../scripts/oauth.js"></script>
