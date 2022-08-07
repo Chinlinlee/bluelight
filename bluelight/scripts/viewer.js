@@ -209,13 +209,14 @@ function virtualLoadImage(imageId, left) {
 }
 function wadorsLoader(url) {
     var data = [];
-
+    let headers = {
+        'user-agent': 'Mozilla/4.0 MDN Example',
+        'content-type': 'multipart/related; type=application/dicom;'
+    };
+    if (oauthConfig.enable) OAuth.addAuthToHeadersObj(headers);
     function getData() {
         fetch(url, {
-            headers: {
-                'user-agent': 'Mozilla/4.0 MDN Example',
-                'content-type': 'multipart/related; type=application/dicom;'
-            },
+            headers,
         })
             .then(async function (res) {
                 let resBlob = await res.arrayBuffer();
@@ -738,7 +739,9 @@ function loadAndViewImage(imageId, currX1, currY1, viewportNum0) {
                 parseDicom2(image, DICOM_obj.pixelData, currX1, currY1, viewportNum0);
 
             },
-                function (err) { });
+            function (err) { 
+                console.error(err);
+            });
         } catch (err) { }
     }
     else {

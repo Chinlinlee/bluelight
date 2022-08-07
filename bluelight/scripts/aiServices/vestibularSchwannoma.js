@@ -65,7 +65,8 @@ class VestibularSchwannomaAIService {
         });
         if (value) {
             FreezeUI();
-            getAIVestibularSchwannomaRTSSDicom(
+            getAIResultLabelDicom(
+                "Vestibular Schwannoma",
                 VestibularSchwannomaAIService.getAICallerUrl(),
                 value
             );

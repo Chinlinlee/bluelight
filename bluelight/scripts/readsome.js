@@ -113,6 +113,10 @@ function readDicom(url, patientmark, openfile) {
   var oReq = new XMLHttpRequest();
   try {
     oReq.open("get", url, true);
+    if (oauthConfig.enable) {
+      console.log("set oauth header");
+      OAuth.setRequestHeader(oReq);
+    }
   } catch (err) { }
   oReq.responseType = "arraybuffer";
   oReq.onreadystatechange = function (oEvent) {

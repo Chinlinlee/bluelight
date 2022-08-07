@@ -18,11 +18,19 @@ window.customWebWorkerConfig = {
 
 cornerstoneWebImageLoader.external.cornerstone = cornerstone;
 cornerstoneWebImageLoader.configure({
-  beforeSend: function (xhr) {
+  beforeSend: function (xhr) { 
+    console.log("set oauth header");
+    OAuth.setRequestHeader(xhr);
   }
 });
 config = window.customWebWorkerConfig;
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+cornerstoneWADOImageLoader.configure({
+  beforeSend: function (xhr) { 
+    console.log("set oauth header");
+    OAuth.setRequestHeader(xhr);
+  }
+});
 cornerstoneWADOImageLoader.webWorkerManager.initialize(config);/*
 */
 function getBlobUrl(url) {

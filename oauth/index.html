@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueLight oauth</title>
+</head>
+<body>
+    
+</body>
+</html>
+<script src="./js/config.js"></script>
+<script src="./js/oauth.js"></script>
+<script>
+    document.onreadystatechange = async function () {
+        if (document.readyState === "complete") { 
+            let token = await OAuth["authorization_code"].getTokenFromOAuthServer();
+            if (token.status === 200) {
+                localStorage.setItem("blueLight_token", JSON.stringify(token.response));
+                setTimeout(function () {
+                    let loginFromUrl = localStorage.getItem("blueLight_loginFrom");
+                    if (loginFromUrl) window.location.href = loginFromUrl;
+                    else window.location.href = "/";
+                }, 500);
+            } else {
+                alert(`status: ${token.status}\r\nmessage:${token.response}`);
+            }
+        }
+    }
+</script>

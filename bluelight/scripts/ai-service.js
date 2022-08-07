@@ -15,13 +15,12 @@ const Toast = Swal.mixin({
     }
 });
 
-document.onreadystatechange = function () {
+document.addEventListener("readystatechange", function () {
     if (document.readyState === "complete") {
         let aiServiceImg = document.querySelector(".AI-SERVICE-IMG");
         aiServiceImg.onclick = aiServiceImgClick;
     }
-};
-
+});
 
 function removeSeriesSelectElements() {
     let swalDocument = Swal.getHtmlContainer();
@@ -76,21 +75,22 @@ function hideValidationMessage() {
     validationMessage.style.display = "none";
 }
 
-function getAIVestibularSchwannomaRTSSDicom(url, requestBody) {
+function getAIResultLabelDicom(aiName, url, requestBody) {
     let oReq = new XMLHttpRequest();
     try {
         oReq.open("POST", url, true);
         oReq.setRequestHeader("Content-Type", "application/json");
+        if (oauthConfig.enable) OAuth.setRequestHeader(oReq);
     } catch (err) {}
     oReq.responseType = "arraybuffer";
     oReq.onreadystatechange = function (oEvent) {
         if (oReq.readyState == 4) {
             UnFreezeUI();
             if (oReq.status == 200) {
-                readAIVestibularSchwannomaRTSSDicom(new Uint8Array(oReq.response), PatientMark);
+                readAILabelDicom(aiName, new Uint8Array(oReq.response), PatientMark);
                 Toast.fire({
                     icon: "success",
-                    title: "Vestibular Schwannoma AI execution completed"
+                    title: `${aiName} AI execution completed`
                 });
             } else {
                 Toast.fire({
@@ -103,7 +103,8 @@ function getAIVestibularSchwannomaRTSSDicom(url, requestBody) {
     oReq.send(JSON.stringify(requestBody));
 }
 
-function readAIVestibularSchwannomaRTSSDicom(byteArray, patientmark) {
+
+function readAILabelDicom(aiName, byteArray, patientmark) {
     var dataSet = dicomParser.parseDicom(byteArray);
     //console.log(dataSet.elements);
     // dataSet1 = dataSet;
@@ -864,6 +865,6 @@ function readAIVestibularSchwannomaRTSSDicom(byteArray, patientmark) {
     }
     Toast.fire({
         icon: "success",
-        title: "Vestibular Schwannoma AI execution completed"
+        title: `${aiName} AI execution completed`
     });
 }
