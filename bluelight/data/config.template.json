@@ -52,6 +52,25 @@
     "//_study_comparison": "進片模式",
     "study_comparison": false,
     "aiService": {
-        "baseUrl": "https://example.com"
+        "baseUrl": "https://example.com",
+        "services" : [
+            {
+                "name": "vestibular schwannoma",
+                "selector": [
+                    {
+                        "level": "study",
+                        "name" : "brain MR"
+                    },
+                    {
+                        "level": "series",
+                        "name": "T1C"
+                    },
+                    {
+                        "level": "series",
+                        "name": "T2"
+                    }
+                ]
+            }
+        ]
     }
 }
