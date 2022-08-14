@@ -322,7 +322,10 @@ function parseDicom2(image, pixelData, currX1, currY1, viewportNum0) {
     let parsedDicomSet = {
         [image.data.string("x0020000d")] : {
             [image.data.string("x0020000e")]: {
-                [image.data.string("x00080018")]: image,
+                [image.data.string("x00080018")]: {
+                    ...image,
+                    InstanceNumber: image.data.string("x00200013")
+                },
                 SeriesDescription: image.data.string("x0008103e")
             },
             PatientName: image.data.string("x00100010")

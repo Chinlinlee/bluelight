@@ -31,9 +31,15 @@ function removeSeriesSelectElements() {
     return true;
 }
 
-const aiServiceClassMap = {
-    "Vestibular Schwannoma": VestibularSchwannomaAIService.createAIServiceComponent
-};
+function removeInstanceSelectElements() {
+    let swalDocument = Swal.getHtmlContainer();
+    let seriesSelectElements = swalDocument.querySelectorAll(".select-instance");
+    for (let e of seriesSelectElements) {
+        e.parentElement.removeChild(e);
+    }
+    return true;
+}
+
 
 async function aiServiceImgClick() {
     let supportedAIService;
@@ -50,10 +56,10 @@ async function aiServiceImgClick() {
     
     if (supportedAIService) {
         let aiServicesBtnList = [];
-        for (let service of supportedAIService) {
-            console.log(service.name);
-            let btn = AIService.buildServiceButtonElement(service.name);
-            btn.onclick = aiServiceClassMap[service.name];
+        for (let serviceOption of ConfigLog.AIService["services"]) {
+            let aiService = new AIService(serviceOption);
+            let btn = aiService.buildServiceButtonElement();
+            btn.onclick = aiService.createAIServiceComponent.bind(aiService);
             aiServicesBtnList.push(btn);
         }
         let { value } = await Swal.fire({
