@@ -171,7 +171,7 @@ function SearchUid2Json(alt) {
                 if (Patient.Study[i].Series[j].Sop[l].SopUID == alt) {
                     return {
                         studyuid: i,
-                        sreiesuid: j,
+                        seriesuid: j,
                         sopuid: l
                     }
                 }
@@ -210,7 +210,7 @@ function SearchNowUid() {
                 if (Patient.Study[i].Series[j].Sop[l].SopUID == alt) {
                     return {
                         studyuid: Patient.Study[i],
-                        sreiesuid: Patient.Study[i].Series[j],
+                        seriesuid: Patient.Study[i].Series[j],
                         sopuid: alt
                     }
                 }
@@ -227,7 +227,7 @@ function GetNowUid() {
                 if (Patient.Study[i].Series[j].Sop[l].SopUID == alt) {
                     return {
                         study: Patient.Study[i].StudyUID,
-                        sreies: Patient.Study[i].Series[j].SeriesUID,
+                        series: Patient.Study[i].Series[j].SeriesUID,
                         sop: Patient.Study[i].Series[j].Sop[l].SopUID
                     }
                 }

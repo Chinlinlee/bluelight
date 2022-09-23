@@ -425,7 +425,7 @@ function writertss() {
                 let Uid = GetNowUid();
                 var dcm = {};
                 dcm.study = Uid.study;
-                dcm.series = Uid.sreies;
+                dcm.series = Uid.series;
                 dcm.color = "rgb(0,0,128)";
                 for (var co = 0; co < getClass("RTSSColorSelectOption").length; co++) {
                     if (getClass("RTSSColorSelectOption")[co].selected == true) {

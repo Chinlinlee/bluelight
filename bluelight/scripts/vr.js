@@ -70,7 +70,7 @@ function initVR() {
         var uid0 = SearchUid2Json(alt0);
 
         if (uid0)
-            loadAndViewImage(Patient.Study[uid0.studyuid].Series[uid0.sreiesuid].Sop[uid0.sopuid].imageId, null, null, 0);
+            loadAndViewImage(Patient.Study[uid0.studyuid].Series[uid0.seriesuid].Sop[uid0.sopuid].imageId, null, null, 0);
         o3DListLength = 0;
     } else if (openVR == true) {
         getByid("3dYellow").checked = true;
@@ -89,7 +89,7 @@ function initVR() {
         var uid = SearchUid2Json(alt);
         NowResize = true;
         GetViewport().NowCanvasSizeWidth = GetViewport().NowCanvasSizeHeight = null;
-        loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId);
+        loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId);
 
         for (var i1 = 0; i1 < Viewport_Total; i1++) {
             GetViewport(i1).removeEventListener("contextmenu", contextmenuF, false);

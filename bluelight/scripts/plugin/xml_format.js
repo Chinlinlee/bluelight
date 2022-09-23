@@ -235,7 +235,7 @@ function importXml(url) {
       for (var i = 0; i < objlist.length; i++) {
         var dcm = {};
         dcm.study = Uid.studyuid;
-        dcm.series = Uid.sreiesuid;
+        dcm.series = Uid.seriesuid;
         dcm.color = "#0000FF";
         dcm.mark = [];
         dcm.showName = "" + objlist[i].getElementsByTagName("name")[0].childNodes[0].data;
@@ -315,7 +315,7 @@ function writexml() {
           let Uid = SearchNowUid();
           var dcm = {};
           dcm.study = Uid.studyuid;
-          dcm.series = Uid.sreiesuid;
+          dcm.series = Uid.seriesuid;
           dcm.color = "#0000FF";
           dcm.mark = [];
           dcm.showName = "" + getByid("xmlMarkNameText").value;
@@ -362,7 +362,7 @@ function writexml() {
         let Uid = SearchNowUid();
         var dcm = {};
         dcm.study = Uid.studyuid;
-        dcm.series = Uid.sreiesuid;
+        dcm.series = Uid.seriesuid;
         dcm.color = "#0000FF";
         dcm.mark = [];
         dcm.showName = "" + getByid("xmlMarkNameText").value;

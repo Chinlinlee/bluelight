@@ -44,12 +44,12 @@ var thisF = function () {
             NowResize = true;
             //NowCanvasSizeWidth = NowCanvasSizeHeight = null;
             if (uid)
-                loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId /*, null, null, viewportNumber*/);
+                loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId /*, null, null, viewportNumber*/);
             else {
                 alt = GetViewport(viewportNum).alt;
                 uid = SearchUid2Json(alt);
                 try {
-                    loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId /*, null, null, viewportNumber*/);
+                    loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId /*, null, null, viewportNumber*/);
                 } catch (ex) { }
             }
             break;

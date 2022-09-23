@@ -259,7 +259,7 @@ function initMPR() {
         //set_BL_model('MouseTool');
         //mouseTool();
         if (uid0)
-            loadAndViewImage(Patient.Study[uid0.studyuid].Series[uid0.sreiesuid].Sop[uid0.sopuid].imageId, null, null, 0);
+            loadAndViewImage(Patient.Study[uid0.studyuid].Series[uid0.seriesuid].Sop[uid0.sopuid].imageId, null, null, 0);
         canvas = GetViewport().canvas()
         //getByid("MouseOperation").onclick();
     } else if (openMPR == true) {
@@ -278,7 +278,7 @@ function initMPR() {
         NowResize = true;
         GetViewport().NowCanvasSizeWidth = GetViewport().NowCanvasSizeHeight = null;
         viewportNumber = 2;
-        loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId);
+        loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId);
         for (var i1 = 0; i1 < Viewport_Total; i1++) {
             GetViewport(i1).removeEventListener("contextmenu", contextmenuF, false);
             GetViewport(i1).removeEventListener("mousemove", Mousemove, false);

@@ -1182,9 +1182,9 @@ function SetWindowWL(openOrigin) {
             var uid = SearchUid2Json(alt);
             if (uid) {
                 if (z == viewportNumber)
-                    loadAndViewImageByWindowLevwl(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId, parseInt(textWC.value), parseInt(textWW.value), openOrigin, z);
+                    loadAndViewImageByWindowLevwl(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId, parseInt(textWC.value), parseInt(textWW.value), openOrigin, z);
                 else
-                    loadAndViewImageByWindowLevwl(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId, parseInt(textWC.value), parseInt(textWW.value), false, z);
+                    loadAndViewImageByWindowLevwl(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId, parseInt(textWC.value), parseInt(textWW.value), false, z);
             }
         }
     } else {
@@ -1192,7 +1192,7 @@ function SetWindowWL(openOrigin) {
         GetViewport().windowCenterList = parseInt(textWC.value);
         GetViewport().windowWidthList = parseInt(textWW.value);
         var uid = SearchUid2Json(alt);
-        loadAndViewImageByWindowLevwl(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId, parseInt(textWC.value), parseInt(textWW.value), openOrigin);
+        loadAndViewImageByWindowLevwl(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId, parseInt(textWC.value), parseInt(textWW.value), openOrigin);
     }
 }
 

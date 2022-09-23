@@ -496,7 +496,7 @@ function writegsps() {
                 let Uid = SearchNowUid();
                 var dcm = {};
                 dcm.study = Uid.studyuid;
-                dcm.series = Uid.sreiesuid;
+                dcm.series = Uid.seriesuid;
                 dcm.color = GetGSPSColor();
                 dcm.mark = [];
                 dcm.showName = getByid("GspsName").value; //"" + getByid("xmlMarkNameText").value;
@@ -522,7 +522,7 @@ function writegsps() {
                 let Uid = SearchNowUid();
                 var dcm = {};
                 dcm.study = Uid.studyuid;
-                dcm.series = Uid.sreiesuid;
+                dcm.series = Uid.seriesuid;
                 dcm.color = GetGSPSColor();
                 dcm.mark = [];
                 dcm.showName = "" + getByid("GspsName").value; //"" + getByid("xmlMarkNameText").value;
@@ -565,7 +565,7 @@ function writegsps() {
                     let Uid = SearchNowUid();
                     var dcm = {};
                     dcm.study = Uid.studyuid;
-                    dcm.series = Uid.sreiesuid;
+                    dcm.series = Uid.seriesuid;
                     dcm.color = GetGraphicColor();
                     if (getByid("GspsPOLYLINE").selected == true) dcm.color = GetGSPSColor();
                     dcm.mark = [];
@@ -650,7 +650,7 @@ function writegsps() {
                 let Uid = SearchNowUid();
                 var dcm = {};
                 dcm.study = Uid.studyuid;
-                dcm.series = Uid.sreiesuid;
+                dcm.series = Uid.seriesuid;
                 dcm.color = GetGSPSColor();
                 dcm.mark = [];
                 dcm.showName = "" + getByid("xmlMarkNameText").value; //"" + getByid("xmlMarkNameText").value;
@@ -678,7 +678,7 @@ function writegsps() {
                 let Uid = SearchNowUid();
                 var dcm = {};
                 dcm.study = Uid.studyuid;
-                dcm.series = Uid.sreiesuid;
+                dcm.series = Uid.seriesuid;
                 dcm.color = GetGSPSColor();
                 dcm.mark = [];
                 dcm.showName = getByid("GspsName").value;
@@ -722,7 +722,7 @@ function writegsps() {
                 let Uid = SearchNowUid();
                 var dcm = {};
                 dcm.study = Uid.studyuid;
-                dcm.series = Uid.sreiesuid;
+                dcm.series = Uid.seriesuid;
                 dcm.color = GetGraphicColor();
                 if (getByid("GspsPOLYLINE").selected == true) dcm.color = GetGSPSColor();
                 dcm.mark = [];
