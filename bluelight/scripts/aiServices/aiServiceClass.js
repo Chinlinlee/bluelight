@@ -11,6 +11,9 @@
  */
 
 import dcmjsMessage from "../external/dcmjs/utilities/Message.js";
+import {
+    aiServiceConfig
+} from "./config.js"
 
 const Toast = Swal.mixin({
     toast: true,
@@ -104,7 +107,7 @@ class AIService {
     static async getSupportAIService() {
         return new Promise((resolve, reject) => {
             let request = new XMLHttpRequest();
-            let urlObj = new URL("/ai-service", ConfigLog.AIService.baseUrl);
+            let urlObj = new URL("/ai-service", aiServiceConfig.baseUrl);
             request.open("GET", urlObj.href);
             request.responseType = "json";
             request.onreadystatechange = function () {
@@ -145,7 +148,7 @@ class AIService {
     getAICallerUrl() {
         let urlObj = new URL(
             this.serviceOption.apiUrl,
-            ConfigLog.AIService.baseUrl
+            aiServiceConfig.baseUrl
         );
         return urlObj.href;
     }
@@ -163,7 +166,7 @@ class AIService {
         } else if (level === "series") {
             cloneUidObj["seriesInstanceUID"] = uid;
         } else if (level === "instance") {
-            cloneUidObj["sopInstanceUid"] = uid;
+            cloneUidObj["sopInstanceUID"] = uid;
         }
         return cloneUidObj;
     }
@@ -183,6 +186,17 @@ class AIService {
                     swalDocument.append(buildedElement.element);
                     AIService.defaultStudySelect(buildedElement.element);
                 });
+                if (this.serviceOption.defaultCurrentInstance) {
+                    let uidObj = GetNowUid();
+                    let level = ["study", "series", "instance"];
+                    let uidLevel = ["study", "series", "sop"];
+                    for (let i = 0 ; i < level.length ; i++) {
+                        let levelSelector = document.querySelector(`.select-${level[i]}`);
+                        let levelSelectorOption = document.querySelector(`.select-${level[i]} option[value="${uidObj[uidLevel[i]]}"]`);
+                        levelSelectorOption.selected = true;
+                        levelSelector.dispatchEvent(new Event("change"));
+                    }
+                }
             },
             focusConfirm: false,
             showCancelButton: true,
@@ -215,7 +229,7 @@ class AIService {
         if (value) {
             FreezeUI();
             getAIResultLabelDicom(
-                this.serviceOption.name,
+                this.serviceOption,
                 this.getAICallerUrl(),
                 value
             );
@@ -421,7 +435,7 @@ class AiServiceSelectorBuilder {
     }
 }
 
-function getAIResultLabelDicom(aiName, url, requestBody) {
+function getAIResultLabelDicom(aiServiceOption, url, requestBody) {
     let oReq = new XMLHttpRequest();
     try {
         oReq.open("POST", url, true);
@@ -429,7 +443,7 @@ function getAIResultLabelDicom(aiName, url, requestBody) {
         if (oauthConfig.enable) OAuth.setRequestHeader(oReq);
     } catch (err) {}
     oReq.responseType = "arraybuffer";
-    oReq.onreadystatechange = function (oEvent) {
+    oReq.onreadystatechange = async function (oEvent) {
         if (oReq.readyState == 4) {
             UnFreezeUI();
             if (oReq.status == 200) {
@@ -449,20 +463,30 @@ function getAIResultLabelDicom(aiName, url, requestBody) {
                         }
                         return Toast.fire({
                             icon: "success",
-                            title: `${aiName} AI execution completed`
+                            title: `${aiServiceOption.name} AI execution completed`
                         });
+                    } else if (responseContentType.indexOf("application/octet-stream") >= 0 ||
+                               responseContentType.indexOf("application/dicom") >= 0
+                    ) {
+                        readAILabelDicom(
+                            aiServiceOption.name,
+                            new Uint8Array(oReq.response),
+                            PatientMark
+                        );
+                        Toast.fire({
+                            icon: "success",
+                            title: `${aiServiceOption.name} AI execution completed`
+                        });
+                    } else {
+                        // parse arrarbuffer response to json
+                        let unit8Response = new Uint8Array(oReq.response);
+                        let decodedStr = String.fromCharCode.apply(null, unit8Response);
+                        let jsonData = JSON.parse(decodedStr);
+
+                        jsonData["requestBody"] = requestBody;
+                        await aiServiceOption.postFunction(jsonData);
                     }
                 }
-
-                readAILabelDicom(
-                    aiName,
-                    new Uint8Array(oReq.response),
-                    PatientMark
-                );
-                Toast.fire({
-                    icon: "success",
-                    title: `${aiName} AI execution completed`
-                });
             } else {
                 Toast.fire({
                     icon: "error",
