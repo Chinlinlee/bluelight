@@ -1,0 +1,127 @@
+.cbir-img {
+    display: inline-block;
+}
+
+.cbir-body-overlay {
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    position: fixed;
+    z-index: 8885251;
+    top: 0;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+
+/* real body */
+.cbir-real-body {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: -50%;
+    z-index: 8885252;
+    width: 50%;
+    height: 100%;
+    padding: .5rem 1rem;
+    box-shadow: 0 6px 12px rgba(107, 82, 82, 0.3);
+    background-color: white;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    transition: ease 0.2s all;
+    background: #1f1f1f;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    overflow-y: auto;
+}
+
+/* #region active */
+.cbir-real-body.active {
+    right: 0;
+}
+
+.cbir-body-overlay.active {
+    display: block
+}
+/* #endregion active */
+
+
+/* #region query image */
+.cbir-real-body .q-image-body {
+    position: relative;
+    display: flex;
+    height: 128px;
+    width: 100%;
+
+    justify-content: center;
+    align-items: center;
+
+    padding: 3rem 0;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    text-align: center;
+}
+
+.q-image-body .q-image {
+    height: 100%;
+    width: 128px;
+    border: 1px solid #EDEDED;
+}
+
+.q-image-body label {
+    display: block;
+    width: 100%;
+
+    color: #EDEDED;
+}
+/* #endregion */
+
+.cbir-real-body .similarity-images {
+    min-height: 100%;
+    width: 100%;
+}
+
+.similarity-images .row {
+    display: flex;
+    position: relative;
+    width: 100%;
+
+    justify-content: center;
+
+    padding-bottom: 3rem;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.similarity-images .row>* {
+    flex: 0 0 128px;
+}
+
+.similarity-img-body {
+    width: 128px;
+    height: calc(128px + 35px + 3rem);
+
+    margin: 0 1rem;
+}
+
+.similarity-img {
+    width: 100%
+}
+
+.similarity-img-body label {
+    color: #EDEDED;
+}
+
+.similarity-images .cornerstone-canvas {
+    border: 1px solid #EDEDED;
+}
+
+.similarity-images .cornerstone-canvas:hover {
+    border: 1px solid #F65A83;
+}
