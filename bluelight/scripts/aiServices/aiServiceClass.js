@@ -227,12 +227,17 @@ class AIService {
             }
         });
         if (value) {
-            FreezeUI();
-            getAIResultLabelDicom(
-                this.serviceOption,
-                this.getAICallerUrl(),
-                value
-            );
+            if (Object.prototype.hasOwnProperty.call(this.serviceOption, "customCall")) {
+                this.serviceOption.customCall(this.serviceOption, this.getAICallerUrl(), value);
+            } else {
+                FreezeUI();
+                getAIResultLabelDicom(
+                    this.serviceOption,
+                    this.getAICallerUrl(),
+                    value
+                );
+            }
+            
         }
     }
 }
@@ -438,7 +443,15 @@ class AiServiceSelectorBuilder {
 function getAIResultLabelDicom(aiServiceOption, url, requestBody) {
     let oReq = new XMLHttpRequest();
     try {
-        oReq.open("POST", url, true);
+        let urlObj = new URL(url);
+        if (Object.prototype.hasOwnProperty.call(requestBody, "params")) {
+            let params = requestBody.params;
+            for(let key in params) {
+                let paramValue = params[key];
+                urlObj.searchParams.append(key, paramValue);
+            }
+        }
+        oReq.open("POST", urlObj.href, true);
         oReq.setRequestHeader("Content-Type", "application/json");
         if (oauthConfig.enable) OAuth.setRequestHeader(oReq);
     } catch (err) {}
@@ -1264,6 +1277,7 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
     });
 }
 
+window.Toast = Toast;
 export {
     AIService,
     AiServiceSelectorBuilder

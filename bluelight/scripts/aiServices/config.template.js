@@ -34,6 +34,15 @@ export const aiServiceConfig = {
              */
             postFunction: (data) => {
                 
+            },
+            /**
+             * 
+             * @param {*} aiServiceOption The current ai service option
+             * @param {*} url {baseUrl}/aiServiceOption.apiUrl
+             * @param {*} requestBody 
+             */
+            customCall: async (aiServiceOption, url, requestBody) => {
+                
             }
         }
     ]
