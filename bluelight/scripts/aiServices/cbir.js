@@ -4,31 +4,55 @@ function createCbirHtml() {
     let template = `
     <div class="cbir-body-overlay"></div>
     <div class="cbir-real-body">
+        <h2 class="cbir-title">CBIR Results</h2>
+        <div class="q-image-body">
+            <div class="q-image" id="q-image">
 
-      <div class="q-image-body">
-        <div class="q-image" id="q-image">
-
-        </div>
-        <label>query image</label>
-      </div>
-
-      <div class="similarity-images">
-
-        <div class="row row-0">
+            </div>
+            <label>query image</label>
         </div>
 
-        <div class="row row-1">
-        </div>
+        <div class="similarity-images">
 
-        <div class="row row-2">
-        </div>
+            <div class="row row-0">
+            </div>
+
+            <div class="row row-1">
+            </div>
+
+            <div class="row row-2">
+            </div>
         
-      </div>
+        </div>
+
+        <nav class="pagination-container">
+            <button class="pagination-button" id="cbir-prev-button" aria-label="Previous page" title="Previous page">
+            &lt;
+            </button>
+
+            <button class="pagination-button" id="cbir-next-button" aria-label="Next page" title="Next page">
+            &gt;
+            </button>
+        </nav>
 
     </div>
     `;
     let body = document.querySelector("body");
     body.insertAdjacentHTML("beforeend", template);
+
+    window.cbir.currentPage = 1;
+    window.cbir.nextButton = document.getElementById("cbir-next-button");
+    window.cbir.prevButton = document.getElementById("cbir-prev-button");
+
+    window.cbir.prevButton.addEventListener("click", ()=> {
+        window.cbir.changePage(window.cbir.currentPage - 1);
+    });
+
+    window.cbir.nextButton.addEventListener("click", ()=> {
+        window.cbir.changePage(window.cbir.currentPage + 1);
+    });
+
+    window.cbir.handlePageButtonsStatus();
 }
 
 function toggleCbirBody() {
@@ -165,9 +189,7 @@ window.cbir.onDoubleClickDoc = (Uids) => {
     toggleCbirBody();
 };
 
-window.cbir.showSimilarityImages = async (data) => {
-    window.cbir.clearSimilarityImage();
-
+window.cbir.showQueryImage = (data) => {
     let qImageData = data["requestBody"]["dicomUidsList"];
     if (typeof qImageData === "object") {
         if (qImageData.length > 0) {
@@ -193,28 +215,22 @@ window.cbir.showSimilarityImages = async (data) => {
         "&contentType=" +
         "application/dicom";
 
-    window.cbir.loadAndViewQueryImage(
-        `wadouri:${queryInstanceUrl}`
-    );
-    
+    window.cbir.loadAndViewQueryImage(`wadouri:${queryInstanceUrl}`);
+};
+
+window.cbir.showSimilarityImages = async (data) => {
+    window.cbir.clearSimilarityImage();
 
     let similarityDocs = data.data;
     let row = 0;
 
-    for (let i = 0 ; i < similarityDocs.length; i++) {
+    for (let i = 0; i < similarityDocs.length; i++) {
         let doc = similarityDocs[i];
-        let {
-            studyInstanceUID,
-            seriesInstanceUID,
-            sopInstanceUID
-        } = doc;
+        let { studyInstanceUID, seriesInstanceUID, sopInstanceUID } = doc;
 
         let instancesInSeries =
-            await window.dicomWebClient.QidoRs.searchForInstances(
-                doc
-            );
-        if (typeof instancesInSeries !== "object")
-            instancesInSeries = [];
+            await window.dicomWebClient.QidoRs.searchForInstances(doc);
+        if (typeof instancesInSeries !== "object") instancesInSeries = [];
 
         let isInstanceExists = instancesInSeries.find(
             (v) => v["00080018"]["Value"][0] === sopInstanceUID
@@ -238,31 +254,96 @@ window.cbir.showSimilarityImages = async (data) => {
                 "&contentType=" +
                 "application/dicom";
 
-            let rowElement = document.querySelector(`.similarity-images .row.row-${row}`);
+            let rowElement = document.querySelector(
+                `.similarity-images .row.row-${row}`
+            );
 
             let imageBodyElement = document.createElement("div");
             imageBodyElement.classList.add("similarity-img-body");
 
             let imageElement = document.createElement("div");
             imageElement.classList.add("similarity-img");
-            imageElement.addEventListener("dblclick", ()=> {
+            imageElement.addEventListener("dblclick", () => {
                 window.cbir.onDoubleClickDoc(doc);
             });
             imageBodyElement.appendChild(imageElement);
 
             let imageLabel = document.createElement("label");
-            imageLabel.innerText = `top-${i+1}\r\nscore: ${doc.similarity_score}`;
+            imageLabel.innerText = `top-${ (window.cbir.currentPage - 1)*10 + i + 1}\r\nscore: ${
+                doc.similarity_score
+            }`;
 
             rowElement.appendChild(imageBodyElement);
 
-            window.cbir.loadAndViewHitImages(`wadouri:${instanceUrl}`, imageElement);
+            window.cbir.loadAndViewHitImages(
+                `wadouri:${instanceUrl}`,
+                imageElement
+            );
 
             imageBodyElement.appendChild(imageLabel);
-            
         }
 
-        if ( (i+1) % 4 === 0 && i !=0 ) row +=1;
+        if ((i + 1) % 4 === 0 && i != 0) row += 1;
     }
+};
 
-    window.cbir.toggleCbirBody();
+const disableButton = (button) => {
+    button.classList.add("disabled");
+    button.setAttribute("disabled", true);
+};
+
+const enableButton = (button) => {
+    button.classList.remove("disabled");
+    button.removeAttribute("disabled");
+};
+
+window.cbir.handlePageButtonsStatus = () => {
+    if (window.cbir.currentPage === 1) {
+        disableButton(window.cbir.prevButton );
+    } else {
+        enableButton(window.cbir.prevButton );
+    }
+};
+
+window.cbir.changePage = (pageNumber) => {
+    window.cbir.currentPage = pageNumber;
+
+    window.cbir.handlePageButtonsStatus();
+    console.log(window.cbir.currentQueryData)
+    window.cbir.currentQueryData["params"] = {};
+    window.cbir.currentQueryData["params"]["page"] = window.cbir.currentPage;
+    window.cbir.getAIResult(null, window.cbir.callUrl, window.cbir.currentQueryData, true);
+};
+
+
+window.cbir.getAIResult = (aiServiceOption, url, requestBody, isPageChange=false) => {
+    FreezeUI();
+    let oReq = new XMLHttpRequest();
+    try {
+        oReq.open("POST", url, true);
+        oReq.setRequestHeader("Content-Type", "application/json");
+        if (oauthConfig.enable) OAuth.setRequestHeader(oReq);
+    } catch (err) {}
+    oReq.responseType = "json";
+    oReq.onreadystatechange = async function (oEvent) {
+        if (oReq.readyState == 4) {
+            if (oReq.status == 200) {
+                let jsonData = oReq.response;
+                window.cbir.currentQueryData = JSON.parse(JSON.stringify(requestBody));
+                window.cbir.callUrl = url;
+
+                jsonData["requestBody"] = requestBody;
+                window.cbir.showQueryImage(jsonData);
+                await window.cbir.showSimilarityImages(jsonData);
+                if (!isPageChange) window.cbir.toggleCbirBody();
+                UnFreezeUI();
+            } else {
+                Toast.fire({
+                    icon: "error",
+                    title: "AI Execution failure"
+                });
+            }
+        }
+    };
+    oReq.send(JSON.stringify(requestBody));
 }

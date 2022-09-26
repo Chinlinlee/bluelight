@@ -13,7 +13,6 @@
     background: rgba(0, 0, 0, 0.5);
 }
 
-
 /* real body */
 .cbir-real-body {
     display: flex;
@@ -23,7 +22,7 @@
     z-index: 8885252;
     width: 50%;
     height: 100%;
-    padding: .5rem 1rem;
+    padding: 0.5rem 1rem;
     box-shadow: 0 6px 12px rgba(107, 82, 82, 0.3);
     background-color: white;
     -webkit-box-sizing: border-box;
@@ -44,10 +43,9 @@
 }
 
 .cbir-body-overlay.active {
-    display: block
+    display: block;
 }
 /* #endregion active */
-
 
 /* #region query image */
 .cbir-real-body .q-image-body {
@@ -70,19 +68,18 @@
 .q-image-body .q-image {
     height: 100%;
     width: 128px;
-    border: 1px solid #EDEDED;
+    border: 1px solid #ededed;
 }
 
 .q-image-body label {
     display: block;
     width: 100%;
 
-    color: #EDEDED;
+    color: #ededed;
 }
 /* #endregion */
 
 .cbir-real-body .similarity-images {
-    min-height: 100%;
     width: 100%;
 }
 
@@ -99,7 +96,7 @@
     flex-wrap: wrap;
 }
 
-.similarity-images .row>* {
+.similarity-images .row > * {
     flex: 0 0 128px;
 }
 
@@ -111,17 +108,50 @@
 }
 
 .similarity-img {
-    width: 100%
+    width: 100%;
 }
 
 .similarity-img-body label {
-    color: #EDEDED;
+    color: #ededed;
 }
 
 .similarity-images .cornerstone-canvas {
-    border: 1px solid #EDEDED;
+    border: 1px solid #ededed;
 }
 
 .similarity-images .cornerstone-canvas:hover {
-    border: 1px solid #F65A83;
+    border: 1px solid #f65a83;
+}
+
+/* #region pagination */
+.pagination-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    bottom: 0;
+    padding: 1rem 2rem;
+    justify-content: space-between;
+}
+
+.pagination-button {
+    font-size: 2rem;
+    background-color: #4f4f4f;
+    border: none;
+    cursor: pointer;
+    height: 3.5rem;
+    width: 3.5rem;
+    border-radius: 0.2rem;
+    color: #EDEDED;
+}
+
+.pagination-button:not(.disabled):hover {
+    background: #fff;
+}
+/* #endregion */
+
+.cbir-title {
+    display: inline-block;
+    position: absolute;
+    color: #EDEDED;
 }
