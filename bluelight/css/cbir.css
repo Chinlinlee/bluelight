@@ -7,7 +7,7 @@
     height: 100vh;
     display: none;
     position: fixed;
-    z-index: 8885251;
+    z-index: 100;
     top: 0;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.5);
@@ -19,7 +19,7 @@
     position: fixed;
     top: 0;
     right: -50%;
-    z-index: 8885252;
+    z-index: 100;
     width: 50%;
     height: 100%;
     padding: 0.5rem 1rem;
@@ -103,8 +103,8 @@
 .similarity-img-body {
     width: 128px;
     height: calc(128px + 35px + 3rem);
-
     margin: 0 1rem;
+    position: relative;
 }
 
 .similarity-img {
@@ -154,4 +154,31 @@
     display: inline-block;
     position: absolute;
     color: #EDEDED;
+}
+
+.btn {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: .1rem 0 0 0.25rem;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.btn .popup::after{
+    content: " ";
+    display: block;
+    background-image: url("../image/icon/black/new-window.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 18px;
+    height: 18px;
+    top: 0;
+    right: 0;
+    position: absolute;
 }
