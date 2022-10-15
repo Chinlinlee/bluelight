@@ -266,7 +266,27 @@ window.cbir.showSimilarityImages = async (data) => {
             imageElement.addEventListener("dblclick", () => {
                 window.cbir.onDoubleClickDoc(doc);
             });
+
+            // Create popup image button
+            let imagePopupBtn = document.createElement("button");
+            imagePopupBtn.classList.add("btn");
+            let imagePopupIcon = document.createElement("span");
+            imagePopupIcon.classList.add("popup");
+            imagePopupBtn.appendChild(imagePopupIcon);
+            imagePopupBtn.addEventListener("click", ()=> {
+                let sourceCanvas = imageElement.firstChild;
+                let imageUrl = sourceCanvas.toDataURL();
+
+                Swal.fire({
+                    width: "75%",
+                    imageUrl: imageUrl,
+                    imageWidth: "480px"
+                });
+            });
+            
+
             imageBodyElement.appendChild(imageElement);
+            
 
             let imageLabel = document.createElement("label");
             imageLabel.innerText = `top-${ (window.cbir.currentPage - 1)*10 + i + 1}\r\nscore: ${
@@ -281,6 +301,7 @@ window.cbir.showSimilarityImages = async (data) => {
             );
 
             imageBodyElement.appendChild(imageLabel);
+            imageBodyElement.appendChild(imagePopupBtn);
         }
 
         if ((i + 1) % 4 === 0 && i != 0) row += 1;
