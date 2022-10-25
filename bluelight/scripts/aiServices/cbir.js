@@ -80,7 +80,14 @@ document.addEventListener("readystatechange", (e) => {
 
         import("../aiServices/dicomweb-client.js").then((module) => {
             let schema = ConfigLog["QIDO"].https;
-            let baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}`;
+            let port = Number(ConfigLog["QIDO"].PORT);
+            let baseUrl = "";
+            if (port == 443 || port == 80) {
+                baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}`;
+            } else {
+                baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}:${port}`;
+            }
+            
             let qidoPrefix = ConfigLog["QIDO"].service;
             let wadoPrefix = ConfigLog["WADO"].service;
 
@@ -359,6 +366,7 @@ window.cbir.getAIResult = (aiServiceOption, url, requestBody, isPageChange=false
                 if (!isPageChange) window.cbir.toggleCbirBody();
                 UnFreezeUI();
             } else {
+                UnFreezeUI();
                 Toast.fire({
                     icon: "error",
                     title: "AI Execution failure"
