@@ -1,4 +1,5 @@
 window.dicomWebClient = {};
+window.cbir = {};
 
 function createCbirHtml() {
     let template = `
@@ -44,11 +45,11 @@ function createCbirHtml() {
     window.cbir.nextButton = document.getElementById("cbir-next-button");
     window.cbir.prevButton = document.getElementById("cbir-prev-button");
 
-    window.cbir.prevButton.addEventListener("click", ()=> {
+    window.cbir.prevButton.addEventListener("click", () => {
         window.cbir.changePage(window.cbir.currentPage - 1);
     });
 
-    window.cbir.nextButton.addEventListener("click", ()=> {
+    window.cbir.nextButton.addEventListener("click", () => {
         window.cbir.changePage(window.cbir.currentPage + 1);
     });
 
@@ -62,44 +63,7 @@ function toggleCbirBody() {
     cbirRealBody.classList.toggle("active");
 }
 
-document.addEventListener("readystatechange", (e) => {
-    if (document.readyState === "complete") {
-        // load custom css for cbir
-        let cbirCssLink = document.createElement("link");
-        cbirCssLink.href = "../css/cbir.css";
-        cbirCssLink.type = "text/css";
-        cbirCssLink.rel = "stylesheet";
-        document.getElementsByTagName("head")[0].appendChild(cbirCssLink);
 
-        createCbirHtml();
-        let cbirImg = document.querySelector(".cbir-img");
-        cbirImg.addEventListener("click", toggleCbirBody);
-
-        let cbirBodyOverlay = document.querySelector(".cbir-body-overlay");
-        cbirBodyOverlay.addEventListener("click", toggleCbirBody);
-
-        import("../aiServices/dicomweb-client.js").then((module) => {
-            let schema = ConfigLog["QIDO"].https;
-            let port = Number(ConfigLog["QIDO"].PORT);
-            let baseUrl = "";
-            if (port == 443 || port == 80) {
-                baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}`;
-            } else {
-                baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}:${port}`;
-            }
-            
-            let qidoPrefix = ConfigLog["QIDO"].service;
-            let wadoPrefix = ConfigLog["WADO"].service;
-
-            window.dicomWebClient = new module.DicomWebClient({
-                url: baseUrl,
-                qidoURLPrefix: qidoPrefix,
-                wadoURLPrefix: wadoPrefix
-            });
-        });
-    }
-});
-window.cbir = {};
 window.cbir.loadAndViewQueryImage = (url) => {
     let qImageElement = document.querySelector(".q-image-body .q-image");
     cornerstone.enable(qImageElement);
@@ -280,7 +244,7 @@ window.cbir.showSimilarityImages = async (data) => {
             let imagePopupIcon = document.createElement("span");
             imagePopupIcon.classList.add("popup");
             imagePopupBtn.appendChild(imagePopupIcon);
-            imagePopupBtn.addEventListener("click", ()=> {
+            imagePopupBtn.addEventListener("click", () => {
                 let sourceCanvas = imageElement.firstChild;
                 let imageUrl = sourceCanvas.toDataURL();
 
@@ -290,15 +254,14 @@ window.cbir.showSimilarityImages = async (data) => {
                     imageWidth: "480px"
                 });
             });
-            
+
 
             imageBodyElement.appendChild(imageElement);
-            
+
 
             let imageLabel = document.createElement("label");
-            imageLabel.innerText = `top-${ (window.cbir.currentPage - 1)*10 + i + 1}\r\nscore: ${
-                doc.similarity_score
-            }`;
+            imageLabel.innerText = `top-${(window.cbir.currentPage - 1) * 10 + i + 1}\r\nscore: ${doc.similarity_score
+                }`;
 
             rowElement.appendChild(imageBodyElement);
 
@@ -327,9 +290,9 @@ const enableButton = (button) => {
 
 window.cbir.handlePageButtonsStatus = () => {
     if (window.cbir.currentPage === 1) {
-        disableButton(window.cbir.prevButton );
+        disableButton(window.cbir.prevButton);
     } else {
-        enableButton(window.cbir.prevButton );
+        enableButton(window.cbir.prevButton);
     }
 };
 
@@ -344,14 +307,14 @@ window.cbir.changePage = (pageNumber) => {
 };
 
 
-window.cbir.getAIResult = (aiServiceOption, url, requestBody, isPageChange=false) => {
+window.cbir.getAIResult = (aiServiceOption, url, requestBody, isPageChange = false) => {
     FreezeUI();
     let oReq = new XMLHttpRequest();
     try {
         oReq.open("POST", url, true);
         oReq.setRequestHeader("Content-Type", "application/json");
         if (oauthConfig.enable) OAuth.setRequestHeader(oReq);
-    } catch (err) {}
+    } catch (err) { }
     oReq.responseType = "json";
     oReq.onreadystatechange = async function (oEvent) {
         if (oReq.readyState == 4) {
@@ -376,3 +339,50 @@ window.cbir.getAIResult = (aiServiceOption, url, requestBody, isPageChange=false
     };
     oReq.send(JSON.stringify(requestBody));
 }
+
+function initCbir() {
+    console.log("load cbir component");
+    // load custom css for cbir
+    let cbirCssLink = document.createElement("link");
+    cbirCssLink.href = "../css/cbir.css";
+    cbirCssLink.type = "text/css";
+    cbirCssLink.rel = "stylesheet";
+    document.getElementsByTagName("head")[0].appendChild(cbirCssLink);
+
+    createCbirHtml();
+    let cbirImg = document.querySelector(".cbir-img");
+    cbirImg.addEventListener("click", toggleCbirBody);
+
+    let cbirBodyOverlay = document.querySelector(".cbir-body-overlay");
+    cbirBodyOverlay.addEventListener("click", toggleCbirBody);
+
+    import("../aiServices/dicomweb-client.js").then((module) => {
+        let schema = ConfigLog["QIDO"].https;
+        let port = Number(ConfigLog["QIDO"].PORT);
+        let baseUrl = "";
+        if (port == 443 || port == 80) {
+            baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}`;
+        } else {
+            baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}:${port}`;
+        }
+
+        let qidoPrefix = ConfigLog["QIDO"].service;
+        let wadoPrefix = ConfigLog["WADO"].service;
+
+        window.dicomWebClient = new module.DicomWebClient({
+            url: baseUrl,
+            qidoURLPrefix: qidoPrefix,
+            wadoURLPrefix: wadoPrefix
+        });
+    });
+}
+
+(() => {
+    if (document.readyState === "complete") {
+        initCbir();
+    } else {
+        document.addEventListener("readystatechange", (e) => {
+            initCbir();
+        });
+    }
+})();
