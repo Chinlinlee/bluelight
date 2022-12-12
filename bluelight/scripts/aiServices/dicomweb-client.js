@@ -2,6 +2,14 @@
  * modify from https://github.com/dcmjs-org/dicomweb-client/blob/c686828ea682e576e846ecf4f8a8160727f2e551/src/api.js#L278
  */
 
+import("../external/formdata/formdata-to-blob.js").then(formDataToBlobModule => {
+    window.formDataToBlob = formDataToBlobModule.formDataToBlob;
+
+    import("../external/formdata/formdata.min.js");
+
+});
+
+
 const MEDIATYPES = {
     DICOM: "application/dicom",
     DICOM_JSON: "application/dicom+json",
@@ -28,6 +36,42 @@ function parseQueryParameters(params = {}) {
         queryString += `${key}=${encodeURIComponent(params[key])}`;
     });
     return queryString;
+}
+
+
+async function fileUpload(url, formData) {
+    return new Promise((resolve) => {
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        xhr.setRequestHeader("Accept", "*/*");
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                console.log("upload file success");
+            } else {
+                console.error("upload file fail", xhr.statusText);
+            }
+            resolve();
+        };
+
+        xhr.upload.onprogress = function (evt) {
+            if (evt.lengthComputable) {
+                let progressRate =
+                    ((evt.loaded / evt.total) * 100) | 0;
+                let progressStr = `${progressRate}%`
+                console.log(progressStr);
+            }
+        };
+
+        let myBlob = formDataToBlob(formData);
+        let m = myBlob.type.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+        let boundary = m[1] || m[2];
+        xhr.setRequestHeader(
+            "Content-Type",
+            `multipart/related; type="application/dicom"; boundary="${boundary}"`
+        );
+        xhr.send(myBlob);
+    });
 }
 
 /**
@@ -69,25 +113,25 @@ function doHttpRequest(url, method, headers = {}, options) {
                     if (verbose) {
                         console.warn(
                             "some resources already existed: ",
-                            request
+                            xhr
                         );
                     }
 
                     resolve(xhr.response);
                 } else if (xhr.status === 204) {
                     if (verbose) {
-                        console.warn("empty response for request: ", request);
+                        console.warn("empty response for request: ", xhr);
                     }
 
                     resolve([]);
                 } else {
-                    const error = new Error("request failed");
-                    error.request = request;
-                    error.response = request.response;
-                    error.status = request.status;
+                    const error = new Error("xhr failed");
+                    error["request"] = xhr;
+                    error.response = xhr.response;
+                    error.status = xhr.status;
 
                     if (verbose) {
-                        console.error("request failed: ", request);
+                        console.error("request failed: ", xhr);
                         console.error(error);
                         console.error(error.response);
                     }
@@ -223,6 +267,7 @@ class DicomWebClient {
         // Verbose - print to console request warnings and errors, default true
         this.verbose = options.verbose !== false;
 
+        //#region QIDO-RS
         this.QidoRs = {
             /**
              * Searches for DICOM studies.
@@ -329,6 +374,16 @@ class DicomWebClient {
                 );
             }
         };
+        //#endregion
+
+        this.StowRs = {
+            storeDicomInstance: async (file) => {
+                let formData = new FormData();
+                formData.append("file", file);
+                await fileUpload(`${this.stowURL}/studies`, formData);
+            }
+        };
+
     }
 }
 
