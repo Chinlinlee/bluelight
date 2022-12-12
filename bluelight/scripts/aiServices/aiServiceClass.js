@@ -29,6 +29,145 @@ const Toast = Swal.mixin({
     }
 });
 
+window.dicomWebClient = {};
+import("../aiServices/dicomweb-client.js").then((module) => {
+    let checkConfigLoadCompleteInterval = setInterval(() => {
+        if (Object.prototype.hasOwnProperty.call(ConfigLog, "QIDO")) {
+            clearInterval(checkConfigLoadCompleteInterval);
+
+            let schema = ConfigLog["QIDO"].https;   
+            let port = Number(ConfigLog["QIDO"].PORT);
+            let baseUrl = "";
+            if (port == 443 || port == 80) {
+                baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}`;
+            } else {
+                baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}:${port}`;
+            }
+        
+            let qidoPrefix = ConfigLog["QIDO"].service;
+            let wadoPrefix = ConfigLog["WADO"].service;
+            let stowPrefix = ConfigLog["STOW"].service;
+        
+            window.dicomWebClient = new module.DicomWebClient({
+                url: baseUrl,
+                qidoURLPrefix: qidoPrefix,
+                wadoURLPrefix: wadoPrefix,
+                stowURLPrefix: stowPrefix
+            });
+        }
+    }, 100);
+
+    let setDropFileForUploadInterval = setInterval(() => {
+        if (Object.prototype.hasOwnProperty.call(window.dicomWebClient, "baseURL")) {
+            clearInterval(setDropFileForUploadInterval);
+
+            document.getElementsByTagName("BODY")[0].addEventListener("drop", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+    
+                if (e.dataTransfer && e.dataTransfer.files) {
+                    let files = e.dataTransfer.files;
+                    for (let i = 0; i < files.length; i++) {
+                        let file = files[i];
+                        if (file) {
+                            setDicomFileObj(file);
+                        }
+                    }
+                }
+            });
+        }
+    }, 100);
+    
+});
+
+/**
+ * Record file obj into parsed dicom list
+ */
+function setDicomFileObj(file) {
+    let reader = new FileReader();
+
+    reader.onload = (_file) => {
+        let arrayBuffer = reader.result;
+
+        let byteArray = new Uint8Array(arrayBuffer);
+
+     
+        let dataSet;
+
+        try {
+
+            dataSet = dicomParser.parseDicom(byteArray, {
+                untilTag: "x7fe00010"
+            });
+
+            let uids = {
+                studyUID: dataSet.string("x0020000d"),
+                seriesUID: dataSet.string("x0020000e"),
+                instanceUID: dataSet.string("x00080018")
+            }
+
+            // use interval because of `parsedDicomList` may not set complete
+            let setDicomFileObjInterval = setInterval(()=> {
+
+                if (Object.prototype.hasOwnProperty.call(window.parsedDicomList, uids.studyUID)) {
+
+                    if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID][uids.seriesUID], uids.instanceUID)) {
+                        clearInterval(setDicomFileObjInterval);
+
+                        let instanceObj = window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID];
+
+                        instanceObj.file = file;
+                        checkDicomInstanceExistInPacsAndSetStatus(uids);
+                    }
+                    
+                }
+
+            }, 100);
+
+        } catch(e) {
+            console.error(e);
+        }
+
+      
+    }
+
+    reader.readAsArrayBuffer(file);
+
+}
+
+
+async function checkDicomInstanceExistInPacsAndSetStatus(uids) {
+
+    let {
+        studyUID: studyInstanceUID,
+        seriesUID: seriesInstanceUID,
+        instanceUID
+    } = uids;
+
+    try {
+        let instancesInfo = await window.dicomWebClient.QidoRs.searchForInstances({
+            studyInstanceUID,
+            seriesInstanceUID,
+            queryParams: {
+                "00080018": instanceUID
+            }
+        });
+
+        if (Array.isArray(instancesInfo)) {
+            if (instancesInfo.length === 0) {
+                window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID]["existInPACS"] = false;
+            } else {
+                window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID]["existInPACS"] = true;
+            }
+        }
+
+    } catch(e) {
+        if (Object.prototype.hasOwnProperty.call(e, "xhr")) {
+            console.log(e.xhr.status);
+        }
+    }
+}
+
 function hideValidationMessage() {
     let validationMessage = document.querySelector(".swal2-validation-message");
     validationMessage.style.display = "none";
@@ -227,6 +366,18 @@ class AIService {
             }
         });
         if (value) {
+
+            let needUpload = Object.prototype.hasOwnProperty.call(this.serviceOption, "uploadFileWhenNotExist") && this.serviceOption.uploadFileWhenNotExist;
+
+            if (needUpload) {
+                let notExistsInstances = this.getNotExistInstances_(value.dicomUidsList);
+
+                for(let instanceObj of notExistsInstances) {
+                    console.log(`upload not exist dicom instance ${JSON.stringify(instanceObj.uids)}`);
+                    await window.dicomWebClient.StowRs.storeDicomInstance(instanceObj.obj.file);
+                }
+            }
+
             if (Object.prototype.hasOwnProperty.call(this.serviceOption, "customCall")) {
                 this.serviceOption.customCall(this.serviceOption, this.getAICallerUrl(), value);
             } else {
@@ -239,6 +390,39 @@ class AIService {
             }
             
         }
+    }
+
+    getNotExistInstances_(dicomUidsList) {
+
+        let notExistsInstances = [];
+
+        for(let uids of dicomUidsList) {
+            let level = this.getUidLevel_(uids);
+            
+            if (level === "instance") {
+                let instanceObj = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID][uids.sopInstanceUID];
+                notExistsInstances.push({
+                    uids,
+                    obj: instanceObj
+                });
+            }
+            // TODO series and study level
+
+        }
+
+        return notExistsInstances;
+
+    }
+
+    getUidLevel_(uid) {
+
+        if (Object.prototype.hasOwnProperty.call(uid, "sopInstanceUID")) {
+            return "instance";
+        } else if (Object.prototype.hasOwnProperty.call(uid, "seriesInstanceUID")) {
+            return "series";
+        } 
+        return "study";
+
     }
 }
 

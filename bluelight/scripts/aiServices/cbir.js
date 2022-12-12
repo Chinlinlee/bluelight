@@ -1,4 +1,3 @@
-window.dicomWebClient = {};
 window.cbir = {};
 
 function createCbirHtml() {
@@ -355,27 +354,6 @@ function initCbir() {
 
     let cbirBodyOverlay = document.querySelector(".cbir-body-overlay");
     cbirBodyOverlay.addEventListener("click", toggleCbirBody);
-
-    import("../aiServices/dicomweb-client.js").then((module) => {
-        while(!Object.prototype.hasOwnProperty.call(ConfigLog["QIDO"], "https")) {}
-        let schema = ConfigLog["QIDO"].https;
-        let port = Number(ConfigLog["QIDO"].PORT);
-        let baseUrl = "";
-        if (port == 443 || port == 80) {
-            baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}`;
-        } else {
-            baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}:${port}`;
-        }
-
-        let qidoPrefix = ConfigLog["QIDO"].service;
-        let wadoPrefix = ConfigLog["WADO"].service;
-
-        window.dicomWebClient = new module.DicomWebClient({
-            url: baseUrl,
-            qidoURLPrefix: qidoPrefix,
-            wadoURLPrefix: wadoPrefix
-        });
-    });
 }
 
 (() => {
