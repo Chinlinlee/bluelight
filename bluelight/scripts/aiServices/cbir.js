@@ -357,6 +357,7 @@ function initCbir() {
     cbirBodyOverlay.addEventListener("click", toggleCbirBody);
 
     import("../aiServices/dicomweb-client.js").then((module) => {
+        while(!Object.prototype.hasOwnProperty.call(ConfigLog["QIDO"], "https")) {}
         let schema = ConfigLog["QIDO"].https;
         let port = Number(ConfigLog["QIDO"].PORT);
         let baseUrl = "";
