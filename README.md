@@ -95,3 +95,37 @@
 * This project was supported by a grant from the Ministry of Science and Technology Taiwan.
 * We acknowledge AI99 teams at Taipei Veterans General Hospital (TVGH) for validation and provides many useful suggestions in many aspects of the clinical domain, especially to thank Dr. Ying-Chou Sun and his professional team.
 * Thanks [琦雯Queenie](https://www.cakeresume.com/Queenie0814?locale=zh-TW), [Queenie's github](https://github.com/Queenie0814) for contributing the logo design. 
+
+# Modify features
+## AI service
+### Configuration
+- path: `bluelight/scripts/aiServices/config.js`
+```js
+export const aiServiceConfig = {
+    baseUrl: "https://ai-service.example.com",
+    services: [
+        {
+            name: "name",
+            apiUrl: "/ai-service/serviceName",
+            defaultCurrentInstance: true,
+            uploadFileWhenNotExist: true,
+            // The selector has study, series, instance level
+            // `push` mean that you want to call AI service with this selected UIDs
+            selector: [
+                {
+                    level: "instance",
+                    name: "Brain",
+                    push: true
+                }
+            ],
+            init: () => {
+                //do something that you want to initialize the specific service
+            },
+            customCall: async (aiServiceOption, url, requestBody) => {
+                //do something after AI service reply
+            }
+        }
+    ]
+};
+
+```
