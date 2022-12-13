@@ -29,13 +29,39 @@ const Toast = Swal.mixin({
     }
 });
 
+/**
+ * 
+ * @param {FileSystemFileEntry | FileSystemDirectoryEntry} item 
+ */
+function handleDirectory(item) {
+    if (item.isDirectory) {
+        let directoryReader = item.createReader();
+
+        let readEntries = (entries) => {
+            entries.forEach((entry) => {
+                handleDirectory(entry);
+            });
+            if (entries.length > 0) {
+                directoryReader.readEntries(readEntries);
+            }
+        };
+
+        directoryReader.readEntries(readEntries);
+
+    } else if (item.isFile) {
+        item.file((file) => {
+            setDicomFileObj(file);
+        });
+    }
+}
+
 window.dicomWebClient = {};
 import("../aiServices/dicomweb-client.js").then((module) => {
     let checkConfigLoadCompleteInterval = setInterval(() => {
         if (Object.prototype.hasOwnProperty.call(ConfigLog, "QIDO")) {
             clearInterval(checkConfigLoadCompleteInterval);
 
-            let schema = ConfigLog["QIDO"].https;   
+            let schema = ConfigLog["QIDO"].https;
             let port = Number(ConfigLog["QIDO"].PORT);
             let baseUrl = "";
             if (port == 443 || port == 80) {
@@ -43,11 +69,11 @@ import("../aiServices/dicomweb-client.js").then((module) => {
             } else {
                 baseUrl = `${schema}://${ConfigLog["QIDO"].hostname}:${port}`;
             }
-        
+
             let qidoPrefix = ConfigLog["QIDO"].service;
             let wadoPrefix = ConfigLog["WADO"].service;
             let stowPrefix = ConfigLog["STOW"].service;
-        
+
             window.dicomWebClient = new module.DicomWebClient({
                 url: baseUrl,
                 qidoURLPrefix: qidoPrefix,
@@ -64,20 +90,30 @@ import("../aiServices/dicomweb-client.js").then((module) => {
             document.getElementsByTagName("BODY")[0].addEventListener("drop", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-    
-                if (e.dataTransfer && e.dataTransfer.files) {
-                    let files = e.dataTransfer.files;
-                    for (let i = 0; i < files.length; i++) {
-                        let file = files[i];
-                        if (file) {
-                            setDicomFileObj(file);
+
+                if (e.dataTransfer && e.dataTransfer.items) {
+                    let items = e.dataTransfer.items;
+
+                    for (let i = 0; i < items.length; i++) {
+
+                        let item = items[i].webkitGetAsEntry();
+                        if (item) {
+                            handleDirectory(item);
                         }
                     }
                 }
             });
+
+            document.getElementById("myfile").addEventListener("change", function() {
+                for (let i = 0 ; i < this.files.length ; i++) {
+                    let file = this.files[i];
+
+                    setDicomFileObj(file);
+                }
+            });
         }
     }, 100);
-    
+
 });
 
 /**
@@ -91,7 +127,7 @@ function setDicomFileObj(file) {
 
         let byteArray = new Uint8Array(arrayBuffer);
 
-     
+
         let dataSet;
 
         try {
@@ -107,28 +143,31 @@ function setDicomFileObj(file) {
             }
 
             // use interval because of `parsedDicomList` may not set complete
-            let setDicomFileObjInterval = setInterval(()=> {
+            let setDicomFileObjInterval = setInterval(() => {
 
+                // Wait for instances info loading into global variable `parsedDicomList`
                 if (Object.prototype.hasOwnProperty.call(window.parsedDicomList, uids.studyUID)) {
 
-                    if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID][uids.seriesUID], uids.instanceUID)) {
-                        clearInterval(setDicomFileObjInterval);
+                    if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID], uids.seriesUID)) {
 
-                        let instanceObj = window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID];
-
-                        instanceObj.file = file;
-                        checkDicomInstanceExistInPacsAndSetStatus(uids);
+                        if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID][uids.seriesUID], uids.instanceUID)) {
+                            clearInterval(setDicomFileObjInterval);
+    
+                            let instanceObj = window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID];
+    
+                            instanceObj.file = file;
+                            checkDicomInstanceExistInPacsAndSetStatus(uids);
+                        }
                     }
-                    
                 }
 
             }, 100);
 
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         }
 
-      
+
     }
 
     reader.readAsArrayBuffer(file);
@@ -161,7 +200,7 @@ async function checkDicomInstanceExistInPacsAndSetStatus(uids) {
             }
         }
 
-    } catch(e) {
+    } catch (e) {
         if (Object.prototype.hasOwnProperty.call(e, "xhr")) {
             console.log(e.xhr.status);
         }
@@ -329,7 +368,7 @@ class AIService {
                     let uidObj = GetNowUid();
                     let level = ["study", "series", "instance"];
                     let uidLevel = ["study", "series", "sop"];
-                    for (let i = 0 ; i < level.length ; i++) {
+                    for (let i = 0; i < level.length; i++) {
                         let levelSelector = document.querySelector(`.select-${level[i]}`);
                         let levelSelectorOption = document.querySelector(`.select-${level[i]} option[value="${uidObj[uidLevel[i]]}"]`);
                         levelSelectorOption.selected = true;
@@ -372,7 +411,7 @@ class AIService {
             if (needUpload) {
                 let notExistsInstances = this.getNotExistInstances_(value.dicomUidsList);
 
-                for(let instanceObj of notExistsInstances) {
+                for (let instanceObj of notExistsInstances) {
                     console.log(`upload not exist dicom instance ${JSON.stringify(instanceObj.uids)}`);
                     await window.dicomWebClient.StowRs.storeDicomInstance(instanceObj.obj.file);
                 }
@@ -388,7 +427,7 @@ class AIService {
                     value
                 );
             }
-            
+
         }
     }
 
@@ -396,9 +435,9 @@ class AIService {
 
         let notExistsInstances = [];
 
-        for(let uids of dicomUidsList) {
+        for (let uids of dicomUidsList) {
             let level = this.getUidLevel_(uids);
-            
+
             if (level === "instance") {
                 let instanceObj = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID][uids.sopInstanceUID];
                 notExistsInstances.push({
@@ -420,7 +459,7 @@ class AIService {
             return "instance";
         } else if (Object.prototype.hasOwnProperty.call(uid, "seriesInstanceUID")) {
             return "series";
-        } 
+        }
         return "study";
 
     }
@@ -630,7 +669,7 @@ function getAIResultLabelDicom(aiServiceOption, url, requestBody) {
         let urlObj = new URL(url);
         if (Object.prototype.hasOwnProperty.call(requestBody, "params")) {
             let params = requestBody.params;
-            for(let key in params) {
+            for (let key in params) {
                 let paramValue = params[key];
                 urlObj.searchParams.append(key, paramValue);
             }
@@ -638,7 +677,7 @@ function getAIResultLabelDicom(aiServiceOption, url, requestBody) {
         oReq.open("POST", urlObj.href, true);
         oReq.setRequestHeader("Content-Type", "application/json");
         if (oauthConfig.enable) OAuth.setRequestHeader(oReq);
-    } catch (err) {}
+    } catch (err) { }
     oReq.responseType = "arraybuffer";
     oReq.onreadystatechange = async function (oEvent) {
         if (oReq.readyState == 4) {
@@ -663,7 +702,7 @@ function getAIResultLabelDicom(aiServiceOption, url, requestBody) {
                             title: `${aiServiceOption.name} AI execution completed`
                         });
                     } else if (responseContentType.indexOf("application/octet-stream") >= 0 ||
-                               responseContentType.indexOf("application/dicom") >= 0
+                        responseContentType.indexOf("application/dicom") >= 0
                     ) {
                         readAILabelDicom(
                             aiServiceOption.name,
@@ -780,7 +819,7 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
             dcm.mark[DcmMarkLength].ctx.putImageData(pixelData, 0, 0);
             patientmark.push(dcm);
             refreshMark(dcm);
-        } catch (ex) {}
+        } catch (ex) { }
     }
     //   }
     ////暫時取消的功能
@@ -804,9 +843,9 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
             ) {
                 tvList.push(
                     "" +
-                        dataSet.elements.x30060020.items[i].dataSet.string(
-                            "x30060026"
-                        )
+                    dataSet.elements.x30060020.items[i].dataSet.string(
+                        "x30060026"
+                    )
                 );
             }
         }
@@ -1112,7 +1151,7 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
                             if (
                                 tempDataSet[j].dataSet.string("x00700015") &&
                                 tempDataSet[j].dataSet.string("x00700015") ==
-                                    "Y"
+                                "Y"
                             ) {
                                 // console.log('Y');
 
@@ -1315,7 +1354,7 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
                                             undefined
                                         );
                                         // alert(i+"  "+ g);
-                                    } catch (ex) {}
+                                    } catch (ex) { }
                                     // }
                                     try {
                                         for (
@@ -1335,7 +1374,7 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
                                                     ].dataSet.string(
                                                         "x00700006"
                                                     );
-                                                
+
                                                 tempDataSet =
                                                     dataSet.elements.x00700001
                                                         .items[i].dataSet
@@ -1348,9 +1387,9 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
                                                     g
                                                 );
                                                 // alert(i+"  "+ g);
-                                            } catch (ex) {}
+                                            } catch (ex) { }
                                         }
-                                    } catch (ex) {}
+                                    } catch (ex) { }
 
                                     //break;
                                 }
@@ -1410,7 +1449,7 @@ function readAILabelDicom(aiName, byteArray, patientmark) {
                             dataSet.elements.x30060010.items[0].dataSet.elements.x30060012.items[0].dataSet.elements.x30060014.items[0].dataSet.string(
                                 "x0020000e"
                             );
-                    } catch (ex) {}
+                    } catch (ex) { }
 
                     dcm.color = color;
                     dcm.mark = [];
