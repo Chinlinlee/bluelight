@@ -414,6 +414,7 @@ class AIService {
                 for (let instanceObj of notExistsInstances) {
                     console.log(`upload not exist dicom instance ${JSON.stringify(instanceObj.uids)}`);
                     await window.dicomWebClient.StowRs.storeDicomInstance(instanceObj.obj.file);
+                    instanceObj.obj.existInPACS = true;
                 }
             }
 
@@ -440,10 +441,14 @@ class AIService {
 
             if (level === "instance") {
                 let instanceObj = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID][uids.sopInstanceUID];
-                notExistsInstances.push({
-                    uids,
-                    obj: instanceObj
-                });
+
+                if (!instanceObj.existInPACS) {
+                    notExistsInstances.push({
+                        uids,
+                        obj: instanceObj
+                    });
+                }
+
             }
             // TODO series and study level
 
