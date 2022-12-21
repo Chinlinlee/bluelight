@@ -372,6 +372,34 @@ class DicomWebClient {
                     false,
                     withCredentials
                 );
+            },
+            /**
+             * Search for All DICOM series (baseUrl/series)
+             * @param {Object} option 
+             */
+            searchForTopLevelSeries: (options= {} ) => {
+                let url = `${this.qidoURL}/series`;
+                let withCredentials = false;
+
+                console.log("search for All series (top level)");
+
+                if ("queryParams" in options) {
+                    url += parseQueryParameters(
+                        options.queryParams
+                    );
+                }
+                if ("withCredentials" in options) {
+                    if (options.withCredentials) {
+                        withCredentials = options.withCredentials;
+                    }
+                }
+
+                return doHttpGetApplicationJson(
+                    url,
+                    {},
+                    false,
+                    withCredentials
+                );
             }
         };
         //#endregion
@@ -384,7 +412,54 @@ class DicomWebClient {
             }
         };
 
+        this.WadoRs = {
+
+            /**
+             *
+             * @param {Object} uids
+             * @param {string} uids.studyInstanceUID
+             */
+            getStudiesUrl: (uids) => {
+                return `${this.wadoURL}/${uids.studyInstanceUID}`;
+            },
+
+            /**
+             *
+             * @param {Object} uids
+             * @param {string} uids.studyInstanceUID
+             * @param {string} uids.seriesInstanceUID
+             */
+            getSeriesUrl: (uids) => {
+                return `${this.wadoURL}/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}`;
+            },
+
+            /**
+             *
+             * @param {Object} uids
+             * @param {string} uids.studyInstanceUID
+             * @param {string} uids.seriesInstanceUID
+             * @param {string} uids.sopInstanceUID
+             */
+            getInstanceUrl: (uids) => {
+                return `${this.wadoURL}/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}/instances/${uids.sopInstanceUID}`;
+            }
+        };
+
+        this.WadoURI = {
+            /**
+             *
+             * @param {Object} uids
+             * @param {string} uids.studyInstanceUID
+             * @param {string} uids.seriesInstanceUID
+             * @param {string} uids.sopInstanceUID
+             */
+            getInstanceUrl: (uids) => {
+                return `${this.wadoURL}?requestType=WADO&studyUID=${uids.studyInstanceUID}&seriesUID=${uids.seriesInstanceUID}&objectUID=${uids.sopInstanceUID}&contentType=application/dicom`;
+            }
+        };
+
     }
+
 }
 
 export { DicomWebClient };
