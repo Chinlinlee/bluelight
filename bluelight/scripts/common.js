@@ -1,3 +1,11 @@
+/**
+ * @typedef Uids
+ * @property {string} studyInstanceUID
+ * @property {string} seriesInstanceUID
+ * @property {string} sopInstanceUID
+ */
+
+
 function cancelTools() {
     openMouseTool = false;
     openWindow = false;
@@ -496,7 +504,7 @@ function displayMark(viewportNum0, o3DElement) {
 
                                 tempctx.rect(x1, y1, x2 - x1, y2 - y1);
                                 tempctx.stroke();
-                                
+
                                 tempctx.closePath();
                                 if (openWriteXML == true) {
                                     tempctx.lineWidth = "" + parseInt(tempctx.lineWidth) * 2;
@@ -1259,4 +1267,68 @@ function nextFrame(dir, frame) {
             }
         }
     }
+}
+
+/**
+ *
+ * @param {Uids} uids
+ */
+function getUrlByUids(uids) {
+    let url = "";
+    if (ConfigLog.WADO.WADOType == "URI") {
+        url =
+            ConfigLog.WADO.https +
+            "://" +
+            ConfigLog.WADO.hostname +
+            ":" +
+            ConfigLog.WADO.PORT +
+            "/" +
+            ConfigLog.WADO.service +
+            "?requestType=WADO&" +
+            "studyUID=" +
+            uids.studyInstanceUID +
+            "&seriesUID=" +
+            uids.seriesInstanceUID +
+            "&objectUID=" +
+            uids.sopInstanceUID +
+            "&contentType=" +
+            "application/dicom";
+    } else if (ConfigLog.WADO.WADOType == "RS") {
+        url =
+            ConfigLog.WADO.https +
+            "://" +
+            ConfigLog.WADO.hostname +
+            ":" +
+            ConfigLog.WADO.PORT +
+            "/" +
+            ConfigLog.WADO.service +
+            "/studies/" +
+            uids.studyInstanceUID +
+            "/series/" +
+            uids.seriesInstanceUID +
+            "/instances/" +
+            uids.sopInstanceUID;
+    }
+
+    return url;
+
+}
+
+function changeToSpecificInstance(instanceUID) {
+    let index;
+    let waitIndexExist = setInterval(() => {
+        index = SearchUid2Index(instanceUID);
+
+        if (index) {
+            clearInterval(waitIndexExist);
+
+            let list = sortInstance(instanceUID);
+
+            let instance = list.find( v=> v.SopUID === instanceUID);
+
+            console.log(instance);
+            loadAndViewImage(instance.imageId, null, null, viewportNumber);
+        }
+
+    }, 25);
 }

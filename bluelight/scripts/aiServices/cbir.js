@@ -111,54 +111,92 @@ window.cbir.toggleCbirBody = toggleCbirBody;
 
 /**
  *
- * @param {Object} Uids
- * @param {string} Uids.studyInstanceUID
- * @param {string} Uids.seriesInstanceUID
- * @param {string} Uids.sopInstanceUID
+ * @param {Uids} uids
  */
-window.cbir.onDoubleClickDoc = (Uids) => {
-    let url = "";
-    if (ConfigLog.WADO.WADOType == "URI") {
-        url =
-            ConfigLog.WADO.https +
-            "://" +
-            ConfigLog.WADO.hostname +
-            ":" +
-            ConfigLog.WADO.PORT +
-            "/" +
-            ConfigLog.WADO.service +
-            "?requestType=WADO&" +
-            "studyUID=" +
-            Uids.studyInstanceUID +
-            "&seriesUID=" +
-            Uids.seriesInstanceUID +
-            "&objectUID=" +
-            Uids.sopInstanceUID +
-            "&contentType=" +
-            "application/dicom";
-    } else if (ConfigLog.WADO.WADOType == "RS") {
-        url =
-            ConfigLog.WADO.https +
-            "://" +
-            ConfigLog.WADO.hostname +
-            ":" +
-            ConfigLog.WADO.PORT +
-            "/" +
-            ConfigLog.WADO.service +
-            "/studies/" +
-            Uids.studyInstanceUID +
-            "/series/" +
-            Uids.seriesInstanceUID +
-            "/instances/" +
-            Uids.sopInstanceUID;
+window.cbir.onDoubleClickDoc = async (uids) => {
+    console.log("selected similarity DICOM uids", uids);
+
+    //Get All instances in series
+    let instancesInfo = await window.dicomWebClient.QidoRs.searchForInstances({
+        studyInstanceUID: uids.studyInstanceUID,
+        seriesInstanceUID: uids.seriesInstanceUID
+    });
+
+    let uidsList = [];
+
+    for(let instanceInfo of instancesInfo) {
+        let studyInstanceUID = instanceInfo["0020000D"].Value[0];
+        let seriesInstanceUID = instanceInfo["0020000E"].Value[0];
+        let sopInstanceUID = instanceInfo["00080018"].Value[0];
+
+        let retrievalInstanceUrl = "";
+        if (ConfigLog.WADO.WADOType == "URI") {
+
+            retrievalInstanceUrl = window.dicomWebClient.WadoURI.getInstanceUrl({
+                studyInstanceUID,
+                seriesInstanceUID,
+                sopInstanceUID
+            });
+
+            loadAndViewImage(`wadouri:${retrievalInstanceUrl}`, 1);
+
+        } else if (ConfigLog.WADO.WADOType == "RS") {
+
+            retrievalInstanceUrl = window.dicomWebClient.WadoRs.getInstanceUrl({
+                studyInstanceUID,
+                seriesInstanceUID,
+                sopInstanceUID
+            });
+
+            wadorsLoader(retrievalInstanceUrl);
+
+        }
+
+        uidsList.push({
+            studyInstanceUID,
+            seriesInstanceUID,
+            sopInstanceUID
+        });
     }
 
-    if (ConfigLog.WADO.WADOType == "URI") loadAndViewImage(`wadouri:${url}`, 1);
-    else if (ConfigLog.WADO.WADOType == "RS") wadorsLoader(url);
+    window.cbir.changeDisplayDicomAfterSeriesLoaded(uidsList, uids.sopInstanceUID);
 
     toggleCbirBody();
 };
 
+/**
+ * @param {Uids[]} uidsList
+ */
+window.cbir.changeDisplayDicomAfterSeriesLoaded = (uidsList, sopInstanceUID)=> {
+
+    let completeInstanceList = [];
+    
+    let checkCompleteInterval = setInterval(() => {
+        for (let uids of uidsList) {
+            let parsedDicom = window.parsedDicomList[uids.studyInstanceUID] &&
+                              window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID] &&
+                              window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID][uids.sopInstanceUID];
+    
+            if (parsedDicom && !completeInstanceList.includes(uids.sopInstanceUID)) {
+                completeInstanceList.push(uids.sopInstanceUID);
+            }
+
+        }
+        
+        if (completeInstanceList.length === uidsList.length) {
+            console.log("load series complete", uidsList[0].seriesInstanceUID);
+            changeToSpecificInstance(sopInstanceUID);
+            clearInterval(checkCompleteInterval);
+        }
+        
+    }, 100);
+    
+};
+
+/**
+ * Show query image on top of CBIR side panel
+ * @param {Object} data CBIR response data
+ */
 window.cbir.showQueryImage = (data) => {
     let qImageData = data["requestBody"]["dicomUidsList"];
     if (typeof qImageData === "object") {
@@ -166,28 +204,34 @@ window.cbir.showQueryImage = (data) => {
             qImageData = qImageData.pop();
         }
     }
+    
+    let queryInstanceUrl = "";
 
-    let queryInstanceUrl =
-        ConfigLog.WADO.https +
-        "://" +
-        ConfigLog.WADO.hostname +
-        ":" +
-        ConfigLog.WADO.PORT +
-        "/" +
-        ConfigLog.WADO.service +
-        "?requestType=WADO&" +
-        "studyUID=" +
-        qImageData.studyInstanceUID +
-        "&seriesUID=" +
-        qImageData.seriesInstanceUID +
-        "&objectUID=" +
-        qImageData.sopInstanceUID +
-        "&contentType=" +
-        "application/dicom";
+    if (ConfigLog.WADO.WADOType == "URI") { 
+
+        queryInstanceUrl = window.dicomWebClient.WadoURI.getInstanceUrl({
+            studyInstanceUID: qImageData.studyInstanceUID,
+            seriesInstanceUID: qImageData.seriesInstanceUID,
+            sopInstanceUID: qImageData.sopInstanceUID
+        });
+
+    } else {
+
+        queryInstanceUrl = window.dicomWebClient.WadoRs.getInstanceUrl({
+            studyInstanceUID: qImageData.studyInstanceUID,
+            seriesInstanceUID: qImageData.seriesInstanceUID,
+            sopInstanceUID: qImageData.sopInstanceUID
+        });
+
+    }
 
     window.cbir.loadAndViewQueryImage(`wadouri:${queryInstanceUrl}`);
 };
 
+/**
+ * Show replied similarity images on CBIR side panel
+ * @param {Object} data 
+ */
 window.cbir.showSimilarityImages = async (data) => {
     window.cbir.clearSimilarityImage();
 
@@ -206,23 +250,11 @@ window.cbir.showSimilarityImages = async (data) => {
             (v) => v["00080018"]["Value"][0] === sopInstanceUID
         );
         if (isInstanceExists) {
-            let instanceUrl =
-                ConfigLog.WADO.https +
-                "://" +
-                ConfigLog.WADO.hostname +
-                ":" +
-                ConfigLog.WADO.PORT +
-                "/" +
-                ConfigLog.WADO.service +
-                "?requestType=WADO&" +
-                "studyUID=" +
-                studyInstanceUID +
-                "&seriesUID=" +
-                seriesInstanceUID +
-                "&objectUID=" +
-                sopInstanceUID +
-                "&contentType=" +
-                "application/dicom";
+            let instanceUrl = getUrlByUids({
+                studyInstanceUID,
+                seriesInstanceUID,
+                sopInstanceUID
+            });
 
             let rowElement = document.querySelector(
                 `.similarity-images .row.row-${row}`
@@ -254,9 +286,7 @@ window.cbir.showSimilarityImages = async (data) => {
                 });
             });
 
-
             imageBodyElement.appendChild(imageElement);
-
 
             let imageLabel = document.createElement("label");
             imageLabel.innerText = `top-${(window.cbir.currentPage - 1) * 10 + i + 1}\r\nscore: ${doc.similarity_score
@@ -273,6 +303,7 @@ window.cbir.showSimilarityImages = async (data) => {
             imageBodyElement.appendChild(imagePopupBtn);
         }
 
+        // 3 images of every row
         if ((i + 1) % 4 === 0 && i != 0) row += 1;
     }
 };
@@ -305,7 +336,13 @@ window.cbir.changePage = (pageNumber) => {
     window.cbir.getAIResult(null, window.cbir.callUrl, window.cbir.currentQueryData, true);
 };
 
-
+/**
+ * Get CBIR results and display CBIR panel
+ * @param {Object} aiServiceOption 
+ * @param {string} url 
+ * @param {Object} requestBody 
+ * @param {boolean} isPageChange If false, call function of display CBIR panel, otherwise no change
+ */
 window.cbir.getAIResult = (aiServiceOption, url, requestBody, isPageChange = false) => {
     FreezeUI();
     let oReq = new XMLHttpRequest();
