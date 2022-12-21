@@ -117,6 +117,12 @@ function readDicom(url, patientmark, openfile) {
       console.log("set oauth header");
       OAuth.setRequestHeader(oReq);
     }
+    var wadoToken = ConfigLog.WADO.token;
+    for (var to = 0; to < Object.keys(wadoToken).length; to++) {
+      if (wadoToken[Object.keys(wadoToken)[to]] != "") {
+        oReq.setRequestHeader("" + Object.keys(wadoToken)[to], "" + wadoToken[Object.keys(wadoToken)[to]]);
+      }
+    }
   } catch (err) { }
   oReq.responseType = "arraybuffer";
   oReq.onreadystatechange = function (oEvent) {
@@ -608,7 +614,7 @@ function loadDicomSeg(image, imageId) {
             dcm.sop = x52009230.items[i].dataSet.elements.x00089124.items[0].dataSet.elements.x00082112.items[0].dataSet.string("x00081155");
           } catch (ex) {
             dcm.sop = x52009229.items[i].dataSet.elements.x00089124.items[0].dataSet.elements.x00082112.items[0].dataSet.string("x00081155");
-          }try {
+          } try {
             dcm.ImagePositionPatient = x52009230.items[i].dataSet.elements.x00209113.items[0].dataSet.string("x00200032");
           } catch (ex) {
             dcm.ImagePositionPatient = x52009229.items[i].dataSet.elements.x00209113.items[0].dataSet.string("x00200032");
@@ -619,7 +625,7 @@ function loadDicomSeg(image, imageId) {
           dcm.mark.push({});
           var DcmMarkLength = dcm.mark.length - 1;
           dcm.mark[DcmMarkLength].type = "SEG";
-          dcm.mark[DcmMarkLength].pixelData = new Uint8Array(rect);
+          dcm.mark[DcmMarkLength].pixelData = new Uint8ClampedArray(rect);
           for (var pix = 0; pix < rect; pix++)
             dcm.mark[DcmMarkLength].pixelData[pix] = NewpixelData[pix];
 
@@ -672,7 +678,7 @@ function loadDicomSeg(image, imageId) {
           var DcmMarkLength = dcm.mark.length - 1;
           dcm.mark[DcmMarkLength].type = "SEG";
 
-          dcm.mark[DcmMarkLength].pixelData = new Uint8Array(rect);
+          dcm.mark[DcmMarkLength].pixelData = new Uint8ClampedArray(rect);
           if (NewpixelData.length == rect * x52009230.items.length) {
             for (var pix = 0; pix < rect; pix++)
               dcm.mark[DcmMarkLength].pixelData[pix] = NewpixelData[pix + rect * k];

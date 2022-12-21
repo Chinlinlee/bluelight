@@ -215,6 +215,17 @@ function wadorsLoader(url) {
     };
     if (oauthConfig.enable) OAuth.addAuthToHeadersObj(headers);
     function getData() {
+        var headers = {
+            'user-agent': 'Mozilla/4.0 MDN Example',
+            'content-type': 'multipart/related; type=application/dicom;'
+        }
+        var wadoToken = ConfigLog.WADO.token;
+        for (var to = 0; to < Object.keys(wadoToken).length; to++) {
+            if (wadoToken[Object.keys(wadoToken)[to]] != "") {
+                headers[Object.keys(wadoToken)[to]] = wadoToken[Object.keys(wadoToken)[to]];
+                // InstanceRequest.setRequestHeader("" + Object.keys(wadoToken)[to], "" + wadoToken[Object.keys(wadoToken)[to]]);
+            }
+        }
         fetch(url, {
             headers,
         })
@@ -723,7 +734,7 @@ function loadAndViewImage(imageId, currX1, currY1, viewportNum0) {
 
     var dicomData = getPatientbyImageID[imageId];
     if (!dicomData) {
-
+     
         try {
             cornerstone.loadImage(imageId, {
                 usePDFJS: true

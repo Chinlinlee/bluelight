@@ -380,7 +380,8 @@ function readConfigJson(url, readAllJson, readJson) {
         tempConfig.timeout = tempResponse["timeout"];
         tempConfig.charset = tempResponse["charset"];
         tempConfig.includefield = tempResponse["includefield"];
-        //tempConfig.enableXml2Dcm=tempResponse["enableXml2Dcm"];
+        tempConfig.token = tempResponse["token"];
+    //tempConfig.enableXml2Dcm=tempResponse["enableXml2Dcm"];
         //tempConfig.Xml2DcmUrl=tempResponse["Xml2DcmUrl"];
 
         config.WADO = {};
@@ -399,31 +400,28 @@ function readConfigJson(url, readAllJson, readJson) {
         tempConfig.contentType = tempResponse["contentType"];
         tempConfig.timeout = tempResponse["timeout"];
         tempConfig.includefield = tempResponse["includefield"];
+    tempConfig.token = tempResponse["token"];
 
         //tempConfig.enableXml2Dcm=tempResponse["enableXml2Dcm"];
         //tempConfig.Xml2DcmUrl=tempResponse["Xml2DcmUrl"];
 
-        config.STOW = {};
-        tempConfig = config.STOW;
-        tempResponse = DicomResponse["DICOMWebServersConfig"][0];
-        tempConfig.hostname = tempResponse["hostname"];
-        tempConfig.https =
-            tempResponse["enableHTTPS"] == true ? "https" : "http";
-        tempConfig.PORT = tempResponse["PORT"];
-        tempConfig.service = tempResponse["STOW"];
-        tempConfig.contentType = tempResponse["contentType"];
-        tempConfig.timeout = tempResponse["timeout"];
-        tempConfig.includefield = tempResponse["includefield"];
-        //tempConfig.enableXml2Dcm=tempResponse["enableXml2Dcm"];
-        //tempConfig.Xml2DcmUrl=tempResponse["Xml2DcmUrl"];
+    config.STOW = {};
+    tempConfig = config.STOW;
+    tempResponse = DicomResponse["DICOMWebServersConfig"][0];
+    tempConfig.hostname = tempResponse["hostname"];
+    tempConfig.https = tempResponse["enableHTTPS"] == true ? "https" : "http";
+    tempConfig.PORT = tempResponse["PORT"];
+    tempConfig.service = tempResponse["STOW"];
+    tempConfig.contentType = tempResponse["contentType"];
+    tempConfig.timeout = tempResponse["timeout"];
+    tempConfig.includefield = tempResponse["includefield"];
+    //tempConfig.enableXml2Dcm=tempResponse["enableXml2Dcm"];
+    //tempConfig.Xml2DcmUrl=tempResponse["Xml2DcmUrl"];
 
-        config.Xml2Dcm = {};
-        tempConfig = config.Xml2Dcm;
-        tempConfig.enableXml2Dcm = tempResponse["enableXml2Dcm"];
-        tempConfig.Xml2DcmUrl = tempResponse["Xml2DcmUrl"];
-
-        config.AIService = {};
-        config.AIService = DicomResponse["aiService"];
+    config.Xml2Dcm = {};
+    tempConfig = config.Xml2Dcm;
+    tempConfig.enableXml2Dcm = tempResponse["enableXml2Dcm"];
+    tempConfig.Xml2DcmUrl = tempResponse["Xml2DcmUrl"];
 
         Object.assign(ConfigLog, config);
         configOnload = true;
@@ -443,7 +441,14 @@ function readJson(url) {
     let SeriesRequest = new XMLHttpRequest();
     SeriesRequest.open("GET", url);
     SeriesRequest.responseType = "json";
-    //發送以Series為單位的請求
+    var wadoToken = ConfigLog.WADO.token;
+  for (var to = 0; to < Object.keys(wadoToken).length; to++) {
+    if (wadoToken[Object.keys(wadoToken)[to]] != "") {
+      SeriesRequest.setRequestHeader("" + Object.keys(wadoToken)[to], "" + wadoToken[Object.keys(wadoToken)[to]]);
+    }
+  }
+
+  //發送以Series為單位的請求
     SeriesRequest.send();
     SeriesRequest.onload = function () {
         let DicomSeriesResponse = SeriesRequest.response;
@@ -463,7 +468,14 @@ function readJson(url) {
             InstanceRequest.open("GET", InstanceUrl);
             InstanceRequest.responseType = "json";
             //發送以Instance為單位的請求
-            InstanceRequest.send();
+            var wadoToken = ConfigLog.WADO.token;
+      for (var to = 0; to < Object.keys(wadoToken).length; to++) {
+        if (wadoToken[Object.keys(wadoToken)[to]] != "") {
+          InstanceRequest.setRequestHeader("" + Object.keys(wadoToken)[to], "" + wadoToken[Object.keys(wadoToken)[to]]);
+        }
+      }
+
+      InstanceRequest.send();
             InstanceRequest.onload = function () {
                 let DicomResponse = InstanceRequest.response;
                 var min = 1000000000;
