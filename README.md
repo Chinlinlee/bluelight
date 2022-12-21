@@ -79,9 +79,6 @@
 # Roadmap
 * FHIR ImagingStudy Query/Retrieve Interface
 * Support the IHE Invoke Image Display (IID) Profile [RAD-106]
-* Display DICOM Whole Slide Imaging (WSI) implemented by DICOMWeb. Referenced standard: [DICOM WSI](http://dicom.nema.org/Dicom/DICOMWSI/)
-* Display DICOM Supplement 222 - Microscopy Bulk Simple Annotations Storage SOP Class. Referenced standard: [DICOM Sup 219](https://www.dicomstandard.org/News-dir/ftsup/docs/sups/sup222.pdf)
-* Display DICOM Supplement 219 - JSON Representation of DICOM Structured Reports. Referenced standard: [DICOM Sup 219](https://www.dicomstandard.org/News-dir/ftsup/docs/sups/Sup219.pdf)
 * Display DICOM Structured Report
 * Display DICOM Waveform - 12 Lead ECG Waveform
 
@@ -92,6 +89,11 @@
 * **BlueLight@Raccoon.net**: :white_check_mark: - [Raccoon.net](https://github.com/cylab-tw/raccoon) is a noSQL-based medical image repository.
 
 # Acknowledgement
+
+* To acknowledge the BlueLight in an academic publication, please cite
+
+ *Chen, TT., Sun, YC., Chu, WC. et al. BlueLight: An Open Source DICOM Viewer Using Low-Cost Computation Algorithm Implemented with JavaScript Using Advanced Medical Imaging Visualization. J Digit Imaging (2022). https://doi.org/10.1007/s10278-022-00746-0*
+
 * This project was supported by a grant from the Ministry of Science and Technology Taiwan.
 * We acknowledge AI99 teams at Taipei Veterans General Hospital (TVGH) for validation and provides many useful suggestions in many aspects of the clinical domain, especially to thank Dr. Ying-Chou Sun and his professional team.
 * Thanks [琦雯Queenie](https://www.cakeresume.com/Queenie0814?locale=zh-TW), [Queenie's github](https://github.com/Queenie0814) for contributing the logo design. 
