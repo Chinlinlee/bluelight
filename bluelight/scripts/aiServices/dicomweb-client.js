@@ -457,7 +457,37 @@ class DicomWebClient {
                 return `${this.wadoURL}?requestType=WADO&studyUID=${uids.studyInstanceUID}&seriesUID=${uids.seriesInstanceUID}&objectUID=${uids.sopInstanceUID}&contentType=application/dicom`;
             }
         };
+    }
 
+    /**
+     * This function only work for BlueLight viewer
+     * Get instance url by config wado mode (WADO-RS/WADO-URI)
+     * if config incorrect, default return WADO-RS instance level URL
+     * @param {Uids} uids 
+     */
+    getInstanceUrlByBlueLightConfigWadoMode(uids) {
+
+        let {
+            studyInstanceUID,
+            seriesInstanceUID,
+            sopInstanceUID
+        } = uids;
+
+        if (ConfigLog.WADO.WADOType == "URI") {
+
+            return this.WadoURI.getInstanceUrl({
+                studyInstanceUID,
+                seriesInstanceUID,
+                sopInstanceUID
+            });
+
+        } 
+
+        return this.WadoRs.getInstanceUrl({
+            studyInstanceUID,
+            seriesInstanceUID,
+            sopInstanceUID
+        });
     }
 
 }
