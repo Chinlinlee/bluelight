@@ -215,10 +215,6 @@ function wadorsLoader(url) {
     };
     if (oauthConfig.enable) OAuth.addAuthToHeadersObj(headers);
     function getData() {
-        var headers = {
-            'user-agent': 'Mozilla/4.0 MDN Example',
-            'content-type': 'multipart/related; type=application/dicom;'
-        }
         var wadoToken = ConfigLog.WADO.token;
         for (var to = 0; to < Object.keys(wadoToken).length; to++) {
             if (wadoToken[Object.keys(wadoToken)[to]] != "") {
