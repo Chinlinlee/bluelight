@@ -110,6 +110,45 @@ window.cbir.clearSimilarityImage = () => {
 window.cbir.toggleCbirBody = toggleCbirBody;
 
 /**
+ * 
+ * @param {Uids} uids 
+ */
+window.cbir.getStudyRT = async (uids) => {
+
+    //Get All instances in series
+    let rtStudiesInfo = await window.dicomWebClient.QidoRs.searchForSeries({
+        studyInstanceUID: uids.studyInstanceUID,
+        queryParams: {
+            Modality: "RTSTRUCT"
+        }
+    });
+
+    for (let rtStudy of rtStudiesInfo) {
+
+        let rtInstances = await window.dicomWebClient.QidoRs.searchForInstances({
+            studyInstanceUID: rtStudy["0020000D"].Value[0],
+            seriesInstanceUID: rtStudy["0020000E"].Value[0]
+        });
+
+        for (let rtInstance of rtInstances) {
+            let studyInstanceUID = rtInstance["0020000D"].Value[0];
+            let seriesInstanceUID = rtInstance["0020000E"].Value[0];
+            let sopInstanceUID = rtInstance["00080018"].Value[0];
+    
+            let retrievalInstanceUrl = window.dicomWebClient.getInstanceUrlByBlueLightConfigWadoMode({
+                studyInstanceUID,
+                seriesInstanceUID,
+                sopInstanceUID
+            });
+        
+            readDicom(retrievalInstanceUrl, PatientMark, true);
+        }
+
+    }
+
+};
+
+/**
  *
  * @param {Uids} uids
  */
@@ -124,44 +163,57 @@ window.cbir.onDoubleClickDoc = async (uids) => {
 
     let uidsList = [];
 
-    for(let instanceInfo of instancesInfo) {
-        let studyInstanceUID = instanceInfo["0020000D"].Value[0];
-        let seriesInstanceUID = instanceInfo["0020000E"].Value[0];
-        let sopInstanceUID = instanceInfo["00080018"].Value[0];
+    FreezeUI();
 
-        let retrievalInstanceUrl = "";
-        if (ConfigLog.WADO.WADOType == "URI") {
-
-            retrievalInstanceUrl = window.dicomWebClient.WadoURI.getInstanceUrl({
+    try {
+        
+        for(let instanceInfo of instancesInfo) {
+            let studyInstanceUID = instanceInfo["0020000D"].Value[0];
+            let seriesInstanceUID = instanceInfo["0020000E"].Value[0];
+            let sopInstanceUID = instanceInfo["00080018"].Value[0];
+    
+            let retrievalInstanceUrl = "";
+            if (ConfigLog.WADO.WADOType == "URI") {
+    
+                retrievalInstanceUrl = window.dicomWebClient.WadoURI.getInstanceUrl({
+                    studyInstanceUID,
+                    seriesInstanceUID,
+                    sopInstanceUID
+                });
+    
+                loadAndViewImage(`wadouri:${retrievalInstanceUrl}`, 1);
+    
+            } else if (ConfigLog.WADO.WADOType == "RS") {
+    
+                retrievalInstanceUrl = window.dicomWebClient.WadoRs.getInstanceUrl({
+                    studyInstanceUID,
+                    seriesInstanceUID,
+                    sopInstanceUID
+                });
+    
+                wadorsLoader(retrievalInstanceUrl);
+    
+            }
+    
+            uidsList.push({
                 studyInstanceUID,
                 seriesInstanceUID,
                 sopInstanceUID
             });
-
-            loadAndViewImage(`wadouri:${retrievalInstanceUrl}`, 1);
-
-        } else if (ConfigLog.WADO.WADOType == "RS") {
-
-            retrievalInstanceUrl = window.dicomWebClient.WadoRs.getInstanceUrl({
-                studyInstanceUID,
-                seriesInstanceUID,
-                sopInstanceUID
-            });
-
-            wadorsLoader(retrievalInstanceUrl);
-
         }
+    
+        await window.cbir.getStudyRT(uids);
+        window.cbir.changeDisplayDicomAfterSeriesLoaded(uidsList, uids.sopInstanceUID);
+    
+        toggleCbirBody();
 
-        uidsList.push({
-            studyInstanceUID,
-            seriesInstanceUID,
-            sopInstanceUID
-        });
+        UnFreezeUI();
+
+    } catch(e) {
+        console.error(e);
+        UnFreezeUI();
     }
 
-    window.cbir.changeDisplayDicomAfterSeriesLoaded(uidsList, uids.sopInstanceUID);
-
-    toggleCbirBody();
 };
 
 /**
@@ -205,25 +257,11 @@ window.cbir.showQueryImage = (data) => {
         }
     }
     
-    let queryInstanceUrl = "";
-
-    if (ConfigLog.WADO.WADOType == "URI") { 
-
-        queryInstanceUrl = window.dicomWebClient.WadoURI.getInstanceUrl({
-            studyInstanceUID: qImageData.studyInstanceUID,
-            seriesInstanceUID: qImageData.seriesInstanceUID,
-            sopInstanceUID: qImageData.sopInstanceUID
-        });
-
-    } else {
-
-        queryInstanceUrl = window.dicomWebClient.WadoRs.getInstanceUrl({
-            studyInstanceUID: qImageData.studyInstanceUID,
-            seriesInstanceUID: qImageData.seriesInstanceUID,
-            sopInstanceUID: qImageData.sopInstanceUID
-        });
-
-    }
+    let queryInstanceUrl = window.dicomWebClient.getInstanceUrlByBlueLightConfigWadoMode({
+        studyInstanceUID: qImageData.studyInstanceUID,
+        seriesInstanceUID: qImageData.seriesInstanceUID,
+        sopInstanceUID: qImageData.sopInstanceUID
+    });
 
     window.cbir.loadAndViewQueryImage(`wadouri:${queryInstanceUrl}`);
 };
@@ -237,6 +275,14 @@ window.cbir.showSimilarityImages = async (data) => {
 
     let similarityDocs = data.data;
     let row = 0;
+
+    if (!similarityDocs) {
+        Toast.fire({
+            icon: "error",
+            title: "AI Execution failure, or there is no similarity image"
+        });
+        return;
+    }
 
     for (let i = 0; i < similarityDocs.length; i++) {
         let doc = similarityDocs[i];
