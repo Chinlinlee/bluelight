@@ -1,7 +1,13 @@
-//ConfigLog from  bluelight/scripts/onload.js -> function readConfigJson:341
+/**
+ * @author Chin-Lin Lee <a5566qq2581@gmail.com>
+ * ConfigLog from bluelight/scripts/onload.js -> function readConfigJson:341
+ * 
+ * Init every ai services
+ * When click ai service icon, display window of AI models selector
+ */
+
 import {
-    AIService,
-    AiServiceSelectorBuilder
+    AIService
 } from "./aiServices/aiServiceClass.js";
 
 import {
