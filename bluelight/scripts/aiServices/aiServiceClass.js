@@ -8,9 +8,11 @@
  * @typedef AiServiceOption
  * @property {string} name
  * @property {SelectorConfig[]} selector
+ * @property {object} customElements
  */
 
 import dcmjsMessage from "../external/dcmjs/utilities/Message.js";
+import { AiServiceCustomElementBuilder } from "./ai-service-custom-element-builder.js";
 import {
     aiServiceConfig
 } from "./config.js"
@@ -104,8 +106,8 @@ import("../aiServices/dicomweb-client.js").then((module) => {
                 }
             });
 
-            document.getElementById("myfile").addEventListener("change", function() {
-                for (let i = 0 ; i < this.files.length ; i++) {
+            document.getElementById("myfile").addEventListener("change", function () {
+                for (let i = 0; i < this.files.length; i++) {
                     let file = this.files[i];
 
                     setDicomFileObj(file);
@@ -152,9 +154,9 @@ function setDicomFileObj(file) {
 
                         if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID][uids.seriesUID], uids.instanceUID)) {
                             clearInterval(setDicomFileObjInterval);
-    
+
                             let instanceObj = window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID];
-    
+
                             instanceObj.file = file;
                             checkDicomInstanceExistInPacsAndSetStatus(uids);
                         }
@@ -355,6 +357,10 @@ class AIService {
         );
         selectorBuilder.build();
 
+        let customElementsBuilder = new AiServiceCustomElementBuilder(
+            this.serviceOption.customElements
+        );
+
         let { value } = await Swal.fire({
             title: "AI Service",
             html: "<span style='color: #F0F0F0'><strong></strong></span>",
@@ -364,17 +370,25 @@ class AIService {
                     swalDocument.append(buildedElement.element);
                     AIService.defaultStudySelect(buildedElement.element);
                 });
+
+                customElementsBuilder.build();
+
                 if (this.serviceOption.defaultCurrentInstance) {
                     let uidObj = GetNowUid();
                     let level = ["study", "series", "instance"];
                     let uidLevel = ["study", "series", "sop"];
-                    for (let i = 0; i < level.length; i++) {
-                        let levelSelector = document.querySelector(`.select-${level[i]}`);
-                        let levelSelectorOption = document.querySelector(`.select-${level[i]} option[value="${uidObj[uidLevel[i]]}"]`);
-                        levelSelectorOption.selected = true;
-                        levelSelector.dispatchEvent(new Event("change"));
+
+                    if (uidObj) {
+                        for (let i = 0; i < level.length; i++) {
+                            let levelSelector = document.querySelector(`.select-${level[i]}`);
+                            let levelSelectorOption = document.querySelector(`.select-${level[i]} option[value="${uidObj[uidLevel[i]]}"]`);
+                            levelSelectorOption.selected = true;
+                            levelSelector.dispatchEvent(new Event("change"));
+                        }
                     }
+                    
                 }
+
             },
             focusConfirm: false,
             showCancelButton: true,
@@ -383,6 +397,8 @@ class AIService {
                     dicomUidsList: []
                 };
                 let uidObj = {};
+                
+                // Get request body's dicom uid list
                 for (let buildedObj of selectorBuilder.buildedElements) {
                     if (buildedObj.level === "study") uidObj = {};
 
@@ -401,6 +417,28 @@ class AIService {
                     );
                     if (buildedObj.needPush) reqBody.dicomUidsList.push(uidObj);
                 }
+
+                // Get request body's custom params
+                for (let customElementObj of customElementsBuilder.buildedElements) {
+                    let paramType = customElementObj.getParamType();
+                    
+                    if (!Object.prototype.hasOwnProperty.call(reqBody, paramType)) {
+                        reqBody[paramType] = [];
+                    }
+
+                    try {
+                        reqBody[paramType].push({
+                            [customElementObj.getRequestField()]: customElementObj.getValue()
+                        });
+                    } catch(e) {
+                        Swal.showValidationMessage(
+                            e.message
+                        );
+                        return;
+                    }
+                    
+                }
+
                 return reqBody;
             }
         });
