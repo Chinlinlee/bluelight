@@ -20,4 +20,15 @@
 
 .btn-ai-service {
     padding: 1.5em 1.1em;
+    width: 47%;
+}
+
+.swal2-html-container {
+    display: flex!important;
+    flex-wrap: wrap;
+}
+
+.swal2-html-container label {
+    margin: auto;
+    color: #e1e1e1;
 }
