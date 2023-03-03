@@ -423,13 +423,11 @@ class AIService {
                     let paramType = customElementObj.getParamType();
                     
                     if (!Object.prototype.hasOwnProperty.call(reqBody, paramType)) {
-                        reqBody[paramType] = [];
+                        reqBody[paramType] = {};
                     }
 
                     try {
-                        reqBody[paramType].push({
-                            [customElementObj.getRequestField()]: customElementObj.getValue()
-                        });
+                        reqBody[paramType][customElementObj.getRequestField()] = customElementObj.getValue();
                     } catch(e) {
                         Swal.showValidationMessage(
                             e.message
