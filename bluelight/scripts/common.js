@@ -1069,6 +1069,10 @@ function SetToLeft(alt, checki, patientid) {
     if (checki >= 0) mainDiv.id = "dicomDivList" + checki;
     mainDiv.style = "width:" + 65 + "px;height:" + 65 + "px;";
     mainDiv.onclick = function () {
+        document.querySelectorAll("[id*=dicomDivListDIV]").forEach(v=> v.classList.remove("left-image-focus"));
+        setTimeout(()=> {
+            document.querySelector("#"+ div.id).classList.add("left-image-focus");
+        }, 0);
         PictureOnclick(div.alt);
     };
     mainDiv.canvas = function () {

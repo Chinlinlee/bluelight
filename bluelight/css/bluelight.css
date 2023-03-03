@@ -1,0 +1,6 @@
+.left-image-focus {
+    width: 65px;
+    height: 135px;
+    border: 5px solid #303F9F!important;
+    touch-action: none;
+}
