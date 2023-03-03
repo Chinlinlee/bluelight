@@ -6,6 +6,11 @@ function createCbirHtml() {
     <div class="cbir-real-body">
         <h2 class="cbir-title">CBIR Results</h2>
         <div class="q-image-body">
+            <div class="advanced-options" id="advanced-options">
+                <label>Show Predicted Tumor Type
+                    <input id="show-predicted-tumor-type-cb" type="checkbox" name="show-predicted-tumor-type">
+                </label>
+            </div>
             <div class="q-image" id="q-image">
 
             </div>
@@ -266,6 +271,35 @@ window.cbir.showQueryImage = (data) => {
     window.cbir.loadAndViewQueryImage(`wadouri:${queryInstanceUrl}`);
 };
 
+function getSimilarityScorePercent(similarityScore) {
+    let num = (similarityScore + Number.EPSILON) * 100;
+    return Math.round((num + Number.EPSILON) * 100 ) / 100;
+}
+
+function getSimilarityImageSpanGroup(index, doc) {
+    let imageSpanIndex = document.createElement("span");
+    imageSpanIndex.innerText = `top-${(window.cbir.currentPage - 1) * 10 + index + 1}`;
+
+    let imageSpanScore = document.createElement("span");
+    let similarityScorePercent = getSimilarityScorePercent(doc.similarity_score);
+    imageSpanScore.innerText = "score: " + similarityScorePercent + "%";
+
+    let imageSpanPrediction = document.createElement("span");
+    let prediction = doc.prediction;
+    imageSpanPrediction.className = "prediction-span";
+    imageSpanPrediction.innerText = `${prediction.class_name} (${prediction.confidence}%)`;
+
+    if (!document.getElementById("show-predicted-tumor-type-cb").checked) {
+        imageSpanPrediction.style.display = "none";
+    }
+
+    return [
+        imageSpanIndex,
+        imageSpanScore,
+        imageSpanPrediction
+    ];
+}
+
 /**
  * Show replied similarity images on CBIR side panel
  * @param {Object} data 
@@ -334,9 +368,8 @@ window.cbir.showSimilarityImages = async (data) => {
 
             imageBodyElement.appendChild(imageElement);
 
-            let imageLabel = document.createElement("label");
-            imageLabel.innerText = `top-${(window.cbir.currentPage - 1) * 10 + i + 1}\r\nscore: ${doc.similarity_score
-                }`;
+
+            let imageSpanGroup = getSimilarityImageSpanGroup(i, doc);
 
             rowElement.appendChild(imageBodyElement);
 
@@ -345,7 +378,7 @@ window.cbir.showSimilarityImages = async (data) => {
                 imageElement
             );
 
-            imageBodyElement.appendChild(imageLabel);
+            imageSpanGroup.forEach(v => imageBodyElement.appendChild(v));
             imageBodyElement.appendChild(imagePopupBtn);
         }
 
@@ -437,6 +470,25 @@ function initCbir() {
 
     let cbirBodyOverlay = document.querySelector(".cbir-body-overlay");
     cbirBodyOverlay.addEventListener("click", toggleCbirBody);
+
+    document.getElementById("show-predicted-tumor-type-cb").addEventListener("change", (event) => {
+        let predictionSpanArr = document.getElementsByClassName("prediction-span")
+        if(event.target.checked) {
+
+            Array.prototype.forEach.call(
+                predictionSpanArr,
+                (predictionSpan) => predictionSpan.style.display = "block"
+            );
+
+        } else {
+
+            Array.prototype.forEach.call(
+                predictionSpanArr,
+                (predictionSpan) => predictionSpan.style.display = "none"
+            );
+
+        }
+    });
 }
 
 (() => {

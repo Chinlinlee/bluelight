@@ -57,7 +57,7 @@
     justify-content: center;
     align-items: center;
 
-    padding: 3rem 0;
+    padding: 3rem 0 6rem 0;
 
     flex-direction: row;
     flex-wrap: wrap;
@@ -115,6 +115,11 @@
     color: #ededed;
     display: block;
     overflow-wrap: break-word;
+
+    /* prevent selection */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
 }
 
 .similarity-images .cornerstone-canvas {
@@ -193,4 +198,17 @@
 
 .ai-service-fieldset legend {
     color: #e1e1e1;
+}
+
+.advanced-options {
+    display: flex;
+    width: 100%;
+    padding-bottom: 1rem;
+}
+
+.advanced-options label{
+    cursor: pointer;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
 }
