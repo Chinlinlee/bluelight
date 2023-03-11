@@ -20,12 +20,13 @@
 
 .btn-ai-service {
     padding: 1.5em 1.1em;
-    flex: 1 1 0;
+    flex: 1 1 45%;
 }
 
 .swal2-html-container {
     display: flex!important;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .swal2-html-container label {
