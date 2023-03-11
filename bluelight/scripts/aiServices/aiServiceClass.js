@@ -448,9 +448,11 @@ class AIService {
                 let notExistsInstances = this.getNotExistInstances_(value.dicomUidsList);
 
                 for (let instanceObj of notExistsInstances) {
+                    FreezeUI();
                     console.log(`upload not exist dicom instance ${JSON.stringify(instanceObj.uids)}`);
                     await window.dicomWebClient.StowRs.storeDicomInstance(instanceObj.obj.file);
                     instanceObj.obj.existInPACS = true;
+                    UnFreezeUI();
                 }
             }
 
@@ -478,20 +480,45 @@ class AIService {
             if (level === "instance") {
                 let instanceObj = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID][uids.sopInstanceUID];
 
-                if (!instanceObj.existInPACS) {
-                    notExistsInstances.push({
-                        uids,
-                        obj: instanceObj
-                    });
-                }
+                this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
 
+            } else if (level === "series") {
+                let instanceObjArray = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID];
+
+                for (let instanceUid in instanceObjArray) {
+                    let instanceObj = instanceObjArray[instanceUid];
+                    if (typeof instanceObj === "object") {
+                        this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
+                    }
+                }
+            } else if (level === "study") {
+                let seriesObjArray = window.parsedDicomList[uids.studyInstanceUID];
+                
+                for (let seriesUid in seriesObjArray) {
+                    let seriesObj = seriesObjArray[seriesUid];
+                    for(let instanceUid in seriesObj) {
+                        let instanceObj = seriesObj[instanceUid];
+                        if (typeof instanceObj === "object") {
+                            this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
+                        }
+                    }
+                }
             }
-            // TODO series and study level
 
         }
 
         return notExistsInstances;
 
+    }
+
+    doPushToNotExistInstances_(notExistsInstances, uids, obj) {
+        if (!obj.existInPACS) {
+            notExistsInstances.push({
+                uids,
+                obj: obj
+            });
+        }
+        return notExistsInstances;
     }
 
     getUidLevel_(uid) {
