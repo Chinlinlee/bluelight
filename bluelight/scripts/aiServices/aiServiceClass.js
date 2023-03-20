@@ -447,13 +447,13 @@ class AIService {
             if (needUpload) {
                 let notExistsInstances = this.getNotExistInstances_(value.dicomUidsList);
 
+                FreezeUI();
                 for (let instanceObj of notExistsInstances) {
-                    FreezeUI();
                     console.log(`upload not exist dicom instance ${JSON.stringify(instanceObj.uids)}`);
                     await window.dicomWebClient.StowRs.storeDicomInstance(instanceObj.obj.file);
                     instanceObj.obj.existInPACS = true;
-                    UnFreezeUI();
                 }
+                UnFreezeUI();
             }
 
             if (Object.prototype.hasOwnProperty.call(this.serviceOption, "customCall")) {
