@@ -41,7 +41,7 @@ getByid("overlay2seg").onclick = function () {
                         let Uid = GetNowUid();
                         var dcm = {};
                         dcm.study = Uid.study;
-                        dcm.series = Uid.sreies;
+                        dcm.series = Uid.series;
 
                         dcm.ImagePositionPatient = GetViewport().ImagePositionPatient;
                         dcm.mark = [];
@@ -540,7 +540,7 @@ function writeSeg() {
                     let Uid = GetNowUid();
                     var dcm = {};
                     dcm.study = Uid.study;
-                    dcm.series = Uid.sreies;
+                    dcm.series = Uid.series;
 
                     dcm.ImagePositionPatient = GetViewport().ImagePositionPatient;
                     dcm.mark = [];

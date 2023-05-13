@@ -96,7 +96,7 @@ window.onresize = function () {
             //20210919新增
             //NowSeries = '';
             GetViewport().NowCanvasSizeWidth = GetViewport().NowCanvasSizeHeight = null;
-            loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.sreiesuid].Sop[uid.sopuid].imageId, i);
+            loadAndViewImage(Patient.Study[uid.studyuid].Series[uid.seriesuid].Sop[uid.sopuid].imageId, i);
         } catch (ex) { }
     }
 

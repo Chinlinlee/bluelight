@@ -58,7 +58,7 @@ function measure() {
                 let Uid = SearchNowUid();
                 var dcm = {};
                 dcm.study = Uid.studyuid;
-                dcm.series = Uid.sreiesuid;
+                dcm.series = Uid.seriesuid;
                 dcm.color = "#FF0000";
                 dcm.mark = [];
                 dcm.showName = "ruler";
@@ -106,7 +106,7 @@ function measure() {
             let Uid = SearchNowUid();
             var dcm = {};
             dcm.study = Uid.studyuid;
-            dcm.series = Uid.sreiesuid;
+            dcm.series = Uid.seriesuid;
             dcm.color = "#FF0000";
             dcm.mark = [];
             dcm.showName = "ruler";
