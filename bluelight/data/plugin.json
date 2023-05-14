@@ -8,6 +8,8 @@
         {"path":"../scripts/plugin/rtss.js", "name": "rtss", "disableCatch": "true"},
         {"path":"../scripts/plugin/seg.js", "name": "seg", "disableCatch": "true"},
         {"path":"../scripts/plugin/tag.js", "name": "tag", "disableCatch": "true"},
-        {"path":"../scripts/plugin/xnat.js", "name": "tag", "disableCatch": "true"}
+        {"path":"../scripts/plugin/xnat.js", "name": "tag", "disableCatch": "true"},
+        {"path": "../scripts/external/sweetalert2/sweetalert2.min.js", "name": "sweetalert2", "disableCatch": "false"},
+        {"path": "../scripts/plugin/ai-services/loader.js", "name": "ai-service", "disableCatch": "true", "scriptType": "module"}
     ]
 }

@@ -1,0 +1,35 @@
+.pointer {
+    cursor: pointer;
+}
+
+.swal2-select,
+.swal2-validation-message {
+    width: 100%;
+}
+.swal2-validation-message {
+    margin: 0 -0.6em !important;
+}
+
+.btn-gray {
+    background-color: rgb(74, 74, 74)!important;
+}
+
+.btn-gray:hover {
+    background-color: rgba(74, 74, 74, 0.5)!important;
+}
+
+.btn-ai-service {
+    padding: 1.5em 1.1em;
+    flex: 1 1 45%;
+}
+
+.swal2-html-container {
+    display: flex!important;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.swal2-html-container label {
+    margin: auto;
+    color: #e1e1e1;
+}

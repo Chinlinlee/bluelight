@@ -124,6 +124,9 @@ let decodeImageFrame;
 //代表按下ctrl
 let KeyCode_ctrl = false;
 let BL_mode = 'MouseTool';
+
+// store parsed dicom files' dicom tags
+window.parsedDicomList = {};
 let AddMouseEvent = function () {
   try {
     GetViewport().removeEventListener("touchstart", thisF, false);

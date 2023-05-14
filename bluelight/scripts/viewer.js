@@ -505,6 +505,21 @@ function loadDicomMultiFrame(image, imageId, viewportNum0) {
 }
 
 function parseDicom(image, pixelData, viewportNum0) {
+    //store dicom set
+    let parsedDicomSet = {
+        [image.data.string("x0020000d")]: {
+            [image.data.string("x0020000e")]: {
+                [image.data.string("x00080018")]: {
+                    ...image,
+                    InstanceNumber: image.data.string("x00200013")
+                },
+                SeriesDescription: image.data.string("x0008103e")
+            },
+            PatientName: image.data.string("x00100010")
+        }
+    };
+    _.merge(parsedDicomList, parsedDicomSet);
+    
     var viewportNum;
     if (viewportNum0 >= 0) viewportNum = viewportNum0;
     else viewportNum = viewportNumber;
