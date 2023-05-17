@@ -10,7 +10,9 @@
 <a href="https://youtu.be/N2VLWxpTWjg"><strong> Video - Labeling tools</strong></a> 
 
 > **Note**
+>
 > The AI service enabled version
+>
 > Using [dicom-ai-service](https://github.com/Chinlinlee/dicom-ai-service) to retrieve DICOM images from PACS and execute AI model
 
 
@@ -71,50 +73,54 @@ export const aiServiceConfig = {
 - This is use case of vestibular schwannoma segmentation
 
 
+https://github.com/Chinlinlee/bluelight/assets/49154622/e4214b99-ddfb-4492-905e-a8c5ce5bb611
+
+
 - following is config in `services` property
 ```json
 {
-    name: "vestibular schwannoma",
-    apiUrl: "/ai-service/vestibular-schwannoma",
-    uploadFileWhenNotExist: true,
-    selector: [
+    "name": "vestibular schwannoma",
+    "apiUrl": "/ai-service/vestibular-schwannoma",
+    "uploadFileWhenNotExist": true,
+    "selector": [
         {
-            level: "series",
-            name: "T1C",
-            push: true
+            "level": "series",
+            "name": "T1C",
+            "push": true
         },
         {
-            level: "series",
-            name: "T2",
-            push: true
+            "level": "series",
+            "name": "T2",
+            "push": true
         }
     ]
 }
 ```
 <details>
     <summary>Config for <a href="https://github.com/Chinlinlee/dicom-ai-service">dicom-ai-service</a></summary>
+  
 ```json
 {
     //* ^[a-z0-9]+(-?[a-z0-9]+){0,5}$, must be lowercase and concat with dashes and only accepts 5 dashes in string
-    name: "vestibular-schwannoma",
+    "name": "vestibular-schwannoma",
     //* The AI model's mode, expected to be AICallerMode.api | AICallerMode.conda | AICallerMode.native
-    mode: AICallerMode.conda,
-    condaEnvName: "smart5",
+    "mode": AICallerMode.conda,
+    "condaEnvName": "smart5",
     //* The path of AI model's python script, please use the absolute path
-    entryFile: path.join(__dirname, "../ai-models/SMART5/M4_20220314/commander.py"),
-    args: [
+    "entryFile": path.join(__dirname, "../ai-models/SMART5/M4_20220314/commander.py"),
+    "args": [
         "--t1c-dir",
         "${seriesDirList[0]}",
         "--t2-dir",
         "${seriesDirList[1]}"
     ],
     //* The path of label DICOM, e.g. GSPS, RTSS, ANN, Or maybe image file?
-    outputPaths: [
+    "outputPaths": [
         "${seriesDirList[0]}/RTSS.dcm"
     ],
-    useCache: true,
-    postInference: false,
-    isFile: true
+    "useCache": true,
+    "postInference": false,
+    "isFile": true
 }
 ```
 </details>
