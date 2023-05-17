@@ -9,6 +9,10 @@
 <a href="https://youtu.be/UkZt_Qbw1Rk"><strong> Video - Basic operation</strong></a> &ensp;&ensp;&ensp;
 <a href="https://youtu.be/N2VLWxpTWjg"><strong> Video - Labeling tools</strong></a> 
 
+> **Note**
+> The AI service enabled version
+> Using [dicom-ai-service](https://github.com/Chinlinlee/dicom-ai-service) to retrieve DICOM images from PACS and execute AI model
+
 
 ## Install
 * Put all files into any directory in the static directory on any HTTP server.
@@ -16,6 +20,104 @@
 ## DICOMWeb Configuration
 * go to `./bluelight/data/config.json` and change the configuration of DICOM server.
  - **Reminder** the DICOMWeb Plugin of the DICOM server shall be installed first. 
+
+## AI Service Configuration
+* Modify `./bluelight/scripts/plugin/ai-services/config.js`
+* Following is example from `./bluelight/scripts/plugin/ai-services/config.template.js`
+* It will generate study UID, series UID, instance UID selects
+* and send UIDs to `https://dicom.ai.example.com/ai-service/ai`
+```js
+export const aiServiceConfig = {
+    baseUrl: "https://dicom.ai.example.com",
+    services: [
+        {
+            name: "ai",
+            apiUrl: "/ai-service/ai",
+            selector: [
+                {
+                    level: "instance",
+                    name: "ai",
+                    push: true
+                }
+            ]
+        }
+    ]
+};
+```
+### Config properties
+| Field Name | Data Type | Description |
+| --- | --- | --- |
+| baseUrl | string | The base URL for the AI service. |
+| services | array of objects | An array of AI service configurations. |
+| services.name | string | The name of the AI model. |
+| services.apiUrl | string | The API endpoint for the AI service. |
+| services.defaultCurrentInstance | boolean | Whether selectors' UID should be set as the default current instance. |
+| services.uploadFileWhenNotExist | boolean | Whether to upload a file using STOW-RS when it does not exist in DICOMweb PACS. |
+| services.selector | array of objects | An array of selector configurations. |
+| services.selector.level | string | The level (`study` \| `series` \| `instance`) of the selector. |
+| services.selector.name | string | The name of the selector. |
+| services.selector.push | boolean | Whether to push this UID in request body. |
+| services.customElements | array of objects | An array of custom element configurations. |
+| services.customElements.type | string | The type of the custom element.<br/>support `radio`, and `checkbox` |
+| services.customElements.id | string | The ID of the custom element. |
+| services.customElements.checked | boolean | Flag indicating whether the custom element is checked. |
+| services.customElements.displayText | string | The display text of the custom element. |
+| services.customElements.params | object | Additional parameters for the custom element. |
+| services.customElements.labelClass | string | The CSS class for the custom element label. |
+| services.init | function | Initialization function for the AI model. |
+| services.customCall | function | Custom call function after AI service respond for the AI model |
+
+## Example Use Case
+- This is use case of vestibular schwannoma segmentation
+
+
+- following is config in `services` property
+```json
+{
+    name: "vestibular schwannoma",
+    apiUrl: "/ai-service/vestibular-schwannoma",
+    uploadFileWhenNotExist: true,
+    selector: [
+        {
+            level: "series",
+            name: "T1C",
+            push: true
+        },
+        {
+            level: "series",
+            name: "T2",
+            push: true
+        }
+    ]
+}
+```
+<details>
+    <summary>Config for <a href="https://github.com/Chinlinlee/dicom-ai-service">dicom-ai-service</a></summary>
+```json
+{
+    //* ^[a-z0-9]+(-?[a-z0-9]+){0,5}$, must be lowercase and concat with dashes and only accepts 5 dashes in string
+    name: "vestibular-schwannoma",
+    //* The AI model's mode, expected to be AICallerMode.api | AICallerMode.conda | AICallerMode.native
+    mode: AICallerMode.conda,
+    condaEnvName: "smart5",
+    //* The path of AI model's python script, please use the absolute path
+    entryFile: path.join(__dirname, "../ai-models/SMART5/M4_20220314/commander.py"),
+    args: [
+        "--t1c-dir",
+        "${seriesDirList[0]}",
+        "--t2-dir",
+        "${seriesDirList[1]}"
+    ],
+    //* The path of label DICOM, e.g. GSPS, RTSS, ANN, Or maybe image file?
+    outputPaths: [
+        "${seriesDirList[0]}/RTSS.dcm"
+    ],
+    useCache: true,
+    postInference: false,
+    isFile: true
+}
+```
+</details>
  
 ## About
 * BlueLight是少數能在網頁上顯示3D VR、MIP及MPR的開源DICOM瀏覽系統，它擁有平易近人的操作介面並支援RWD及Web零足跡瀏覽，可在任意大小的裝置上執行。
