@@ -98,3 +98,75 @@ function initAiServices() {
         Swal.close();
     };
 }
+
+
+/**
+ * @typedef Uids
+ * @property {string} studyInstanceUID
+ * @property {string} seriesInstanceUID
+ * @property {string} sopInstanceUID
+ */
+
+/**
+ *
+ * @param {Uids} uids
+ */
+window.getUrlByUids = (uids) => {
+    let url = "";
+    if (ConfigLog.WADO.WADOType == "URI") {
+        url =
+            ConfigLog.WADO.https +
+            "://" +
+            ConfigLog.WADO.hostname +
+            ":" +
+            ConfigLog.WADO.PORT +
+            "/" +
+            ConfigLog.WADO.service +
+            "?requestType=WADO&" +
+            "studyUID=" +
+            uids.studyInstanceUID +
+            "&seriesUID=" +
+            uids.seriesInstanceUID +
+            "&objectUID=" +
+            uids.sopInstanceUID +
+            "&contentType=" +
+            "application/dicom";
+    } else if (ConfigLog.WADO.WADOType == "RS") {
+        url =
+            ConfigLog.WADO.https +
+            "://" +
+            ConfigLog.WADO.hostname +
+            ":" +
+            ConfigLog.WADO.PORT +
+            "/" +
+            ConfigLog.WADO.service +
+            "/studies/" +
+            uids.studyInstanceUID +
+            "/series/" +
+            uids.seriesInstanceUID +
+            "/instances/" +
+            uids.sopInstanceUID;
+    }
+
+    return url;
+
+}
+
+window.changeToSpecificInstance = (instanceUID) => {
+    let index;
+    let waitIndexExist = setInterval(() => {
+        index = SearchUid2Index(instanceUID);
+
+        if (index) {
+            clearInterval(waitIndexExist);
+
+            let list = sortInstance(instanceUID);
+
+            let instance = list.find( v=> v.SopUID === instanceUID);
+
+            console.log(instance);
+            loadAndViewImage(instance.imageId, viewportNumber);
+        }
+
+    }, 25);
+}
