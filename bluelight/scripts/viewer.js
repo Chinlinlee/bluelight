@@ -319,7 +319,7 @@ function parseDicom(image, pixelData, viewportNum0) {
     if (viewportNum0 >= 0) viewportNum = viewportNum0;
     else viewportNum = viewportNumber;
     if (VIEWPORT.lockViewportList && VIEWPORT.lockViewportList.includes(viewportNum)) return;
-
+}
 function setSopToViewport(Sop, viewportNum = viewportNumber, framesNumber) {
     if (Sop.constructor.name == "String") Sop = Patient.findSop(Sop);
     var element = GetViewport(viewportNum);
