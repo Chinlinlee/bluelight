@@ -299,27 +299,6 @@ function loadDicomMultiFrame(image, imageId, viewportNum0) {
     }, 200);
 }
 
-function parseDicom(image, pixelData, viewportNum0) {
-    //store dicom set
-    let parsedDicomSet = {
-        [image.data.string("x0020000d")]: {
-            [image.data.string("x0020000e")]: {
-                [image.data.string("x00080018")]: {
-                    ...image,
-                    InstanceNumber: image.data.string("x00200013")
-                },
-                SeriesDescription: image.data.string("x0008103e")
-            },
-            PatientName: image.data.string("x00100010")
-        }
-    };
-    _.merge(parsedDicomList, parsedDicomSet);
-    
-    var viewportNum;
-    if (viewportNum0 >= 0) viewportNum = viewportNum0;
-    else viewportNum = viewportNumber;
-    if (VIEWPORT.lockViewportList && VIEWPORT.lockViewportList.includes(viewportNum)) return;
-}
 function setSopToViewport(Sop, viewportNum = viewportNumber, framesNumber) {
     if (Sop.constructor.name == "String") Sop = Patient.findSop(Sop);
     var element = GetViewport(viewportNum);
@@ -401,7 +380,6 @@ function setSopToViewport(Sop, viewportNum = viewportNumber, framesNumber) {
 }
 
 function parseDicom(image, pixelData, viewportNum = viewportNumber) {
-
     var element = GetViewport(viewportNum);
     if (element.enable == false || element.lockRender == true) return;
     var MarkCanvas = GetViewportMark(viewportNum);
