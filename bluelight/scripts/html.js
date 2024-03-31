@@ -1,11 +1,14 @@
+var BorderList_Icon = ["MouseOperation", "WindowRevision", "MeasureRuler", "MouseRotate", "playvideo", "zoom", "b_Scroll", "AngleRuler", "openMeasureImg"];
+
 function html_onload() {
-  document.documentElement.onmousemove = DivDraw;
-  document.documentElement.ontouchmove = DivDraw;
   document.body.style.overscrollBehavior = "none";
   getByid("openFile").onclick = function () {
     if (this.enable == false) return;
     getByid('myfile').click();
   }
+
+  //點到其他地方時，關閉抽屜
+  getClass("container")[0].addEventListener("mousedown", hideAllDrawer, false);
 
   window.addEventListener("keydown", KeyDown, true);
   window.addEventListener("keyup", KeyUp, true);
@@ -15,16 +18,43 @@ function html_onload() {
 
   function KeyDown(KeyboardKeys) {
     var key = KeyboardKeys.which
+    //修復key===33和34時，GetViewport().tags.InstanceNumber為字串之問題
     if (key === 33) {
-      jump2UpOrEnd(getNowInstance() - parseInt(getAllSop().length / 10) + 1, undefined);
+      jump2UpOrEnd(parseInt(GetViewport().tags.InstanceNumber) - parseInt(Patient.findSeries(GetViewport().series).Sop.length / 10) + 0, undefined);
     } else if (key === 34) {
-      jump2UpOrEnd(getNowInstance() + parseInt(getAllSop().length / 10) + 1, undefined);
+      jump2UpOrEnd(parseInt(GetViewport().tags.InstanceNumber) + parseInt(Patient.findSeries(GetViewport().series).Sop.length / 10) + 0, undefined);
     } else if (key === 36) {
       jump2UpOrEnd(0, 'up');
     } else if (key === 35) {
       jump2UpOrEnd(0, 'end');
     } else if (key === 17) {
       KeyCode_ctrl = true;
+    } else if (KeyboardKeys.key == '-') {
+      var viewport = GetViewport(), canvas = GetViewport().canvas;
+      if (viewport.scale > 0.1) viewport.scale -= viewport.scale * 0.05;
+      setTransform();
+      if (openLink == true) {
+        for (var i = 0; i < Viewport_Total; i++) {
+          if (i == viewportNumber) continue;
+          GetViewport(i).scale = GetViewport().scale;
+          GetViewport(i).translate.x = viewport.translate.x;
+          GetViewport(i).translate.y = viewport.translate.y;
+          setTransform(i);
+        }
+      }
+      displayAllRuler();
+    } else if (KeyboardKeys.key == '+') {
+      var viewport = GetViewport(), canvas = GetViewport().canvas;
+      if (viewport.scale < 10) viewport.scale += viewport.scale * 0.05;
+      setTransform();
+      if (openLink == true) {
+        for (var i = 0; i < Viewport_Total; i++) {
+          if (i == viewportNumber) continue;
+          GetViewport(i).scale = GetViewport().scale;
+          setTransform(i);
+        }
+      }
+      displayAllRuler();
     }
   }
 
@@ -100,15 +130,15 @@ function html_onload() {
     }*/
   }
 
-  getByid("ClearMarkupButton").onclick = function () {
+  /*getByid("ClearMarkupButton").onclick = function () {
     PatientMark = [];
     for (var i = 0; i < Viewport_Total; i++) {
       var sop = GetViewport(i).sop;
       loadAndViewImage(getImgaeIdFromSop(sop), i);
     }
-  }
+  }*/
 
-  getByid("ExportButton2").onclick = function () {
+  getByid("downloadDcm").onclick = function () {
     var Export2dcm = function () {
       var link = document.createElement('a');
       link.download = GetViewport().imageId.replace("wadouri:", "").replace("wadors:", "").replace(/^.*(\\|\/|\:)/, '');
@@ -120,7 +150,7 @@ function html_onload() {
     Export2dcm();
   }
 
-  getByid("ExportButton").onclick = function () {
+  getByid("downloadImg").onclick = function () {
     var Export2png = function () {
       var link = document.createElement('a');
       link.download = 'dicom.png';
@@ -131,10 +161,12 @@ function html_onload() {
         newCanvas.height = oldCanvas.height;
         return newCanvas;
       }
-      var newCanvas = BuildCanvas(GetViewport().canvas());
+      var newCanvas = BuildCanvas(GetViewport().canvas);
       var context = newCanvas.getContext('2d');
-      context.drawImage(GetViewport().canvas(), 0, 0);
-      context.drawImage(GetViewportMark(), 0, 0);
+      context.translate(newCanvas.width / 2, newCanvas.height / 2);
+      context.rotate((GetViewport().rotate * Math.PI) / 180);
+      context.drawImage(GetViewport().canvas, -newCanvas.width / 2, -newCanvas.height / 2);
+      context.drawImage(GetViewportMark(), -newCanvas.width / 2, -newCanvas.height / 2);
       link.href = newCanvas.toDataURL()
       link.click();
     }
@@ -145,6 +177,7 @@ function html_onload() {
 
     if (this.enable == false) return;
     //BL_mode = 'MouseTool';
+    hideAllDrawer();
     set_BL_model('MouseTool');
     mouseTool();
     //cancelTools();
@@ -152,21 +185,14 @@ function html_onload() {
     drawBorder(this);
   }
 
-  getByid("b_Scroll").onclick = function () {
+  /*getByid("SplitWindow").onclick = function () {
     if (this.enable == false) return;
-    //BL_mode = 'scroll';
-    set_BL_model('scroll');
-    scroll();
-    drawBorder(this);
-  }
-
-  getByid("annotation1").onclick = function () {
-    if (this.enable == false) return;
+    hideAllDrawer();
     if (getByid("SplitViewportDiv").style.display == "none")
       getByid("SplitViewportDiv").style.display = "";
     else
       getByid("SplitViewportDiv").style.display = "none";
-  }
+  }*/
 
   getByid("MouseRotate").onclick = function () {
     if (this.enable == false) return;
@@ -176,12 +202,71 @@ function html_onload() {
     drawBorder(this);
   }
 
+  getByid("Rotate_90").onclick = function () {
+    GetViewport().rotate += 90;
+    GetViewport().rotate = (GetViewport().rotate % 360 + 360) % 360;//有考慮負值
+    setTransform();
+    if (openLink == true) {
+      for (var z = 0; z < Viewport_Total; z++) {
+        GetViewport(z).rotate = GetViewport().rotate;
+        setTransform(z);
+      }
+    }
+  }
+
+  getByid("Rotate_i90").onclick = function () {
+    GetViewport().rotate -= 90;
+    GetViewport().rotate = (GetViewport().rotate % 360 + 360) % 360;//有考慮負值
+    setTransform();
+    if (openLink == true) {
+      for (var z = 0; z < Viewport_Total; z++) {
+        GetViewport(z).rotate = GetViewport().rotate;
+        setTransform(z);
+      }
+    }
+  }
+
+  getByid("Rotate_0").onclick = function () {
+    GetViewport().rotate = 0;
+    setTransform();
+    if (openLink == true) {
+      for (var z = 0; z < Viewport_Total; z++) {
+        GetViewport(z).rotate = GetViewport().rotate;
+        setTransform(z);
+      }
+    }
+  }
+  /*getByid("Rotate_180").onclick = function () {
+    GetViewport().rotate = 180;
+    setTransform();
+    if (openLink == true) {
+      for (var z = 0; z < Viewport_Total; z++) {
+        GetViewport(z).rotate = GetViewport().rotate;
+        setTransform(z);
+      }
+    }
+  }
+
+  getByid("Rotate_270").onclick = function () {
+    GetViewport().rotate = 270;
+    setTransform();
+    if (openLink == true) {
+      for (var z = 0; z < Viewport_Total; z++) {
+        GetViewport(z).rotate = GetViewport().rotate;
+        setTransform(z);
+      }
+    }
+  }*/
+
   getByid("WindowRevision").onclick = function () {
     if (this.enable == false) return;
     //BL_mode = 'windowlevel';
+    hideAllDrawer("windowlevel");
     set_BL_model('windowlevel');
     windowlevel();
     drawBorder(this);
+    getByid("textWC").value = GetViewport().windowCenter;
+    getByid("textWW").value = GetViewport().windowWidth;
     //cancelTools();
     //getByid("textWC").style.display = '';
     //getByid("textWW").style.display = '';
@@ -191,8 +276,144 @@ function html_onload() {
     //SetTable();
   }
 
+  getByid("clearviewportImg").onclick = function () {
+    hideAllDrawer();
+    GetViewport().clear();
+    displayMark();
+    displayRuler();
+    putLabel();
+    displayAIM();
+    displayAnnotation();
+    VIEWPORT.loadViewport(GetViewport(), null, viewportNumber);
+    DisplaySeriesCount();
+    getClass("labelLT")[viewportNumber].innerText = "";
+    getClass("labelWC")[viewportNumber].innerText = "";
+    getClass("labelRT")[viewportNumber].innerText = "";
+    getClass("labelRB")[viewportNumber].innerText = "";
+    PatientMark = [];
+    Patient = new BlueLightPatient();
+    getPatientbyImageID = {};
+    getByid("LeftPicture").innerHTML = ""; //leftLayout = new LeftLayout();
+    leftLayout.reflesh();
+    getByid("myfile").value = null;
+  }
+  getByid("OtherImg").onclick = function () {
+    hideAllDrawer("othereDIv");
+    invertDisplayById('othereDIv');
+    if (getByid("othereDIv").style.display == "none") getByid("OtherImgParent").style.position = "";
+    else {
+      getByid("OtherImgParent").style.position = "relative";
+      //onElementLeave();
+    }
+  }
+
   getByid("openMeasureImg").onclick = function () {
+    hideAllDrawer("openMeasureDIv");
     invertDisplayById('openMeasureDIv');
+    if (getByid("openMeasureDIv").style.display == "none") getByid("MeasureImgParent").style.position = "";
+    else {
+      getByid("MeasureImgParent").style.position = "relative";
+      onElementLeave();
+    }
+  }
+
+  getByid("openTransformationsImg").onclick = function () {
+    hideAllDrawer("openTransformationsDiv");
+    invertDisplayById('openTransformationsDiv');
+    if (getByid("openTransformationsDiv").style.display == "none") getByid("TransformationsImgParent").style.position = "";
+    else {
+      getByid("TransformationsImgParent").style.position = "relative";
+      onElementLeave();
+    }
+  }
+
+  getByid("WindowRevisionOption").onclick = function () {
+    hideAllDrawer("openWindowRevisionDiv");
+    invertDisplayById('openWindowRevisionDiv');
+    if (getByid("openWindowRevisionDiv").style.display == "none") getByid("WindowRevisionParent").style.position = "";
+    else {
+      getByid("WindowRevisionParent").style.position = "relative";
+      onElementLeave();
+    }
+
+    function setWindowSelectStyle() {
+      for (var obj of getClass("WindowSelect")) {
+        obj.classList.remove("activeImg");
+      }
+      if (!GetViewport() || isNaN(GetViewport().windowCenter) | isNaN(GetViewport().windowWidth)) return;
+      if (!GetViewport().content.image || isNaN(GetViewport().content.image.windowCenter) | isNaN(GetViewport().content.image.windowWidth)) return;
+
+      var active = false;
+
+      for (var obj of getClass("WindowSelect")) {
+        if (obj.getAttribute("wc") == GetViewport().windowCenter && obj.getAttribute("ww") == GetViewport().windowWidth) {
+          obj.classList.add("activeImg");
+          active = true;
+        }
+      }
+      if (active) return;
+      if (GetViewport().windowCenter == GetViewport().content.image.windowCenter && GetViewport().windowWidth == GetViewport().content.image.windowWidth) {
+        getByid("WindowDefault").classList.add("activeImg");
+      } else {
+        getByid("WindowCustom").classList.add("activeImg");
+      }
+    }
+    setWindowSelectStyle();
+  }
+
+  getByid("SplitWindow").onclick = function () {
+    function createSplitWindow() {
+      var outerDiv = getByid("openSplitWindowDiv");
+      outerDiv.innerHTML = "";
+      outerDiv.selectObj = null;
+      outerDiv.style.backgroundColor = "rgb(55,55,55)"
+      outerDiv.style.width = (4 * 30 + 4 * 5 + 4) + "px";
+      outerDiv.style.height = (4 * 30 + 4 * 5 + 4) + "px";
+      outerDiv.onclick = function () {
+        if (this.selectObj) {
+          this.selectObj.onclick();
+          this.selectObj = null;
+        }
+      }
+
+      for (var r = 0; r < 4; r++) {
+        for (var c = 0; c < 4; c++) {
+          var div = document.createElement("DIV");
+          div.className = "SplitWindowCell";
+          div.style.position = "absolute";
+          div.style.width = div.style.height = 30 + "px";
+          div.style.left = 5 + (5 + 30) * c + "px";
+          div.style.top = 5 + (5 + 30) * r + "px";
+          div.row = r;
+          div.col = c;
+          div.style.backgroundColor = "rgb(105,105,105)"
+          outerDiv.appendChild(div);
+          div.onclick = function () {
+            hideAllDrawer();
+            Viewport_row = this.row + 1;
+            Viewport_col = this.col + 1;
+            getByid("MouseOperation").click();
+            SetTable();
+            window.onresize();
+          }
+          div.onmouseenter = function () {
+            for (var obj of getClass("SplitWindowCell")) {
+              if (obj.row <= this.row && obj.col <= this.col) obj.style.backgroundColor = "rgb(170,160,160)"
+              else obj.style.backgroundColor = "rgb(105,105,105)"
+            }
+            getByid("openSplitWindowDiv").selectObj = this;
+          }
+        }
+      }
+    }
+    hideAllDrawer("openSplitWindowDiv");
+    invertDisplayById('openSplitWindowDiv');
+    if (getByid("openSplitWindowDiv").style.display == "none") getByid("SplitParent").style.position = "";
+    else {
+      getByid("SplitParent").style.position = "relative";
+      onElementLeave();
+      createSplitWindow();
+    }
   }
 
   getByid("removeRuler").onclick = function () {
@@ -212,33 +433,41 @@ function html_onload() {
     for (var n in PatientMark) { refreshMark(PatientMark[n]); }
     //for (var s = 0; s < sopList.length; s++)
     //   refreshMarkFromSop(sopList[s]);
+    for (var i = 0; i < Viewport_Total; i++)
+      if (GetViewport(i).series) leftLayout.refleshMarkWithSeries(GetViewport(i).series);
+
+    getByid("openMeasureImg").click();
+
+    Angle_now_choose = null;
+    Angle_previous_choose = null;
+    angle.angle_ = "stop";
   }
 
-  getByid("zoom").onclick = function () {
-    if (this.enable == false) return;
-    //BL_mode = 'zoom';
-    set_BL_model('zoom')
-    zoom();
-    drawBorder(this);
+  for (var element of getClass("img")) {
+    if (element && element.alt) {
+      element.onmouseover = onElementOver;
+      element.onmouseleave = onElementLeave;
+    }
   }
 
   getByid("horizontal_flip").onclick = function () {
     if (this.enable == false) return;
-    GetViewport().openHorizontalFlip = !GetViewport().openHorizontalFlip;
-    SetWindowWL(true);
-    displayMark();
+    GetViewport().HorizontalFlip = !GetViewport().HorizontalFlip;
+    if (openLink) SetAllViewport("HorizontalFlip", GetViewport().HorizontalFlip);
+    refleshViewport();
   }
 
   getByid("vertical_flip").onclick = function () {
     if (this.enable == false) return;
-    GetViewport().openVerticalFlip = !GetViewport().openVerticalFlip;
-    SetWindowWL(true);
-    displayMark();
+    GetViewport().VerticalFlip = !GetViewport().VerticalFlip;
+    if (openLink) SetAllViewport("VerticalFlip", GetViewport().VerticalFlip);
+    refleshViewport();
   }
   getByid("color_invert").onclick = function () {
     if (this.enable == false) return;
-    GetViewport().openInvert = !GetViewport().openInvert;
-    SetWindowWL(true);
+    GetViewport().invert = !GetViewport().invert;
+    if (openLink) SetAllViewport("invert", GetViewport().invert);
+    refleshViewport();
   }
 
   getByid("unlink").onclick = function () {
@@ -247,42 +476,25 @@ function html_onload() {
     changeLinkImg();
   }
 
-  getByid("MeasureRuler").onclick = function () {
+  getByid("resetImg").onclick = function () {
     if (this.enable == false) return;
-    set_BL_model('measure');
-    measure();
-
-    drawBorder(this);
+    resetAndLoadImg();
+    hideAllDrawer();
   }
 
-  getByid("AngleRuler").onclick = function () {
+  getByid("eraseRuler").onclick = function () {
     if (this.enable == false) return;
     //cancelTools();
-    set_BL_model('angle');
-    angle();
-    drawBorder(this);
-  }
-
-  getByid("playvideo").onclick = function () {
-    if (this.enable == false) return;
-    openAngle = 0;
-    drawBorder(this);
-    GetViewport().openPlay = !GetViewport().openPlay;
-    if (GetViewport().openPlay) {
-      getByid('labelPlay').style.display = '';
-      getByid('textPlay').style.display = '';
-    }
-    else {
-      getByid('labelPlay').style.display = 'none';
-      getByid('textPlay').style.display = 'none';
-    }
-    PlayTimer();
+    set_BL_model('erase');
+    erase();
+    drawBorder(getByid("openMeasureImg"));
+    hideAllDrawer();
   }
 
   getByid("MarkButton").onclick = function () {
-    GetViewport().openMark = !GetViewport().openMark;
-    for (var i = 0; i < Viewport_Total; i++) GetViewportMark(i).getContext("2d").clearRect(0, 0, GetViewport(i).imageWidth, GetViewport(i).imageHeight);
-    for (var i = 0; i < Viewport_Total; i++) displayMark(i);
+    GetViewport().drawMark = !GetViewport().drawMark;
+    for (var i = 0; i < Viewport_Total; i++) GetViewportMark(i).getContext("2d").clearRect(0, 0, GetViewport(i).width, GetViewport(i).height);
+    displayAllMark()
     changeMarkImg();
   }
 
@@ -294,10 +506,11 @@ function html_onload() {
 
   getByid("MarkupImg").onclick = function () {
     if (this.enable == false) return;
+    hideAllDrawer();
     openDisplayMarkup = !openDisplayMarkup;
     var TableSelectOnChange = function () {
-      GetViewport().style.overflowY = "hidden";
-      GetViewport().style.overflowX = "hidden";
+      GetViewport().div.style.overflowY = "hidden";
+      GetViewport().div.style.overflowX = "hidden";
       if (getByid("DICOMTagsSelect").selected == true)
         displayDicomTagsList();
       else if (getByid("AIMSelect").selected == true)
@@ -326,57 +539,80 @@ function html_onload() {
   }
 
   getByid("markFillCheck").onclick = function () {
-    for (var i = 0; i < Viewport_Total; i++) displayMark(i);
+    displayAllMark()
   }
 
   getByid("MarkcolorSelect").onchange = function () {
-    for (var i = 0; i < Viewport_Total; i++) displayMark(i);
+    displayAllMark()
   }
 
-  getByid("WindowLevelSelect").onchange = function () {
+  for (var obj of getClass("WindowSelect")) {
+    obj.onclick = function () {
+      if (this.id == "WindowDefault") {
+        getByid("textWC").value = GetViewport().windowCenter = GetViewport().content.image.windowCenter;
+        getByid("textWW").value = GetViewport().windowWidth = GetViewport().content.image.windowWidth;
+        if (openLink) SetAllViewport("windowCenter", GetViewport().windowCenter);
+        if (openLink) SetAllViewport("windowWidth", GetViewport().windowWidth);
+      }
+      else if (this.id == "WindowCustom") {
+        getByid("WindowRevision").click()
+        return;
+      }
+      else {
+        GetViewport().windowCenter = getByid("textWC").value = parseInt(this.getAttribute('wc'));
+        GetViewport().windowWidth = getByid("textWW").value = parseInt(this.getAttribute('ww'));
+        if (openLink) SetAllViewport("windowCenter", GetViewport().windowCenter);
+        if (openLink) SetAllViewport("windowWidth", GetViewport().windowWidth);
+      }
+      refleshViewport();
+      WindowOpen = true;
+      hideAllDrawer();
+    }
+  }
+
+  /*getByid("WindowLevelSelect").onchange = function () {
     if (getByid("WindowDefault").selected == true) {
-      getByid("textWC").value = GetViewport().windowCenterList = GetViewport().windowCenter;
-      getByid("textWW").value = GetViewport().windowWidthList = GetViewport().windowWidth;
-      SetWindowWL();
+      getByid("textWC").value = GetViewport().windowCenter = GetViewport().content.image.windowCenter;
+      getByid("textWW").value = GetViewport().windowWidth = GetViewport().content.image.windowWidth;
+      if (openLink) SetAllViewport("windowCenter", GetViewport().windowCenter);
+      if (openLink) SetAllViewport("windowWidth", GetViewport().windowWidth);
+      refleshViewport();
       WindowOpen = true;
       return;
     }
     for (var i = 0; i < getClass("WindowSelect").length; i++) {
       if (getClass("WindowSelect")[i].selected == true) {
-        GetViewport().windowCenterList = getByid("textWC").value = parseInt(getClass("WindowSelect")[i].getAttribute('wc'));
-        GetViewport().windowWidthList = getByid("textWW").value = parseInt(getClass("WindowSelect")[i].getAttribute('ww'));
-        SetWindowWL();
+        GetViewport().windowCenter = getByid("textWC").value = parseInt(getClass("WindowSelect")[i].getAttribute('wc'));
+        GetViewport().windowWidth = getByid("textWW").value = parseInt(getClass("WindowSelect")[i].getAttribute('ww'));
+        if (openLink) SetAllViewport("windowCenter", GetViewport().windowCenter);
+        if (openLink) SetAllViewport("windowWidth", GetViewport().windowWidth);
+        refleshViewport();
         WindowOpen = true;
         break;
       }
     }
-  }
+  }*/
 
   getByid("textWC").onchange = function () {
-    GetViewport().windowCenterList = parseInt(getByid("textWC").value);
+    GetViewport().windowCenter = parseInt(getByid("textWC").value);
     getByid("WindowCustom").selected = true;
-    SetWindowWL();
+    if (openLink) SetAllViewport("windowCenter", GetViewport().windowCenter);
+    refleshViewport();
     WindowOpen = true;
   }
 
   getByid("textWW").onchange = function () {
-    GetViewport().windowWidthList = parseInt(getByid("textWW").value);
+    GetViewport().windowWidth = parseInt(getByid("textWW").value);
     getByid("WindowCustom").selected = true;
-    SetWindowWL();
+    if (openLink) SetAllViewport("windowWidth", GetViewport().windowWidth);
+    refleshViewport();
     WindowOpen = true;
-  }
-
-  getByid("textPlay").onchange = function () {
-    if ((parseInt(getByid('textPlay').value) <= 1)) getByid('textPlay').value = 1;
-    else if (parseInt(getByid('textPlay').value) >= 60) getByid('textPlay').value = 60;
-    else if (!(parseInt(getByid('textPlay').value) >= 1)) getByid('textPlay').value = 10;
-    PlayTimer();
   }
 
   getByid("labelZoom").onchange = function () {
     if ((zoom <= 25)) getByid('textZoom').value = zoom = 25;
     if (zoom >= 400) getByid('textZoom').value = zoom = 400;
-    SetWindowWL();
+    refleshViewport();
   }
 
   getByid("markAlphaText").onchange = function () {
@@ -384,7 +620,7 @@ function html_onload() {
     else if ((parseInt(getByid('markAlphaText').value) >= 100)) getByid('markAlphaText').value = 100;
     else if ((parseInt(getByid('markAlphaText').value) < 100));
     else getByid('markAlphaText').value = 100;
-    for (var i = 0; i < Viewport_Total; i++) displayMark(i);
+    displayAllMark()
   }
 
   getByid("markSizeText").onchange = function () {
@@ -392,7 +628,7 @@ function html_onload() {
     else if ((parseInt(getByid('markSizeText').value) >= 10)) getByid('markSizeText').value = 10;
     else if ((parseInt(getByid('markSizeText').value) < 10));
     else getByid('markSizeText').value = 1;
-    for (var i = 0; i < Viewport_Total; i++) displayMark(i);
+    displayAllMark()
   }
 
   getByid("myfile").onchange = function () {
@@ -451,6 +687,7 @@ function addEvent2SplitViewport() {
         Viewport_row = 1;
         Viewport_col = 1;
       }
+      getByid("SplitViewportDiv").style.display = "none";
       getByid("MouseOperation").click();
       SetTable();
       window.onresize();
@@ -459,9 +696,7 @@ function addEvent2SplitViewport() {
 }
 
 function changeMarkImg() {
-  getByid("MeasureLabel").style.display = "none";
-  getByid("AngleLabel").style.display = "none";
-  if (GetViewport().openMark == true) getByid("MarkButton").src = "../image/icon/black/fist0.png";
+  if (GetViewport().drawMark == true) getByid("MarkButton").src = "../image/icon/black/fist0.png";
   else getByid("MarkButton").src = "../image/icon/black/fist1.png";
 }
 
@@ -472,16 +707,12 @@ function changeLinkImg() {
 
 function drawBorder(element) {
   if (element != getByid("b_Scroll")) openChangeFile = false;
-  Css(getByid("MouseOperation"), 'border', "");
-  Css(getByid("WindowRevision"), 'border', "");
-  Css(getByid("MeasureRuler"), 'border', "");
-  Css(getByid("MouseRotate"), 'border', "");
-  Css(getByid("playvideo"), 'border', "");
-  Css(getByid("zoom"), 'border', "");
-  Css(getByid("b_Scroll"), 'border', "");
-  Css(getByid("AngleRuler"), 'border', "");
-  Css(element, 'border', 3 + "px #FFFFFF solid");
-  Css(element, 'borderRadius', "3px 3px 3px 3px");
+
+  var list = BorderList_Icon;
+  for (elemID of list) getByid(elemID).style['border'] = "";
+
+  element.style["border"] = 3 + "px #FFFFFF solid"
+  element.style["borderRadius"] = "3px 3px 3px 3px"
 }
 
 function img2darkByClass(classname, dark) {
@@ -498,6 +729,45 @@ function img2darkByClass(classname, dark) {
     } else {
       class1[i].style.opacity = 1;
       class1[i].enable = true;
+    }
+  }
+}
+
+function onElementOver(OriginElem) {
+  if (!OriginElem) OriginElem = this;
+  if (OriginElem.constructor.name == 'MouseEvent') OriginElem = OriginElem.toElement;
+  // 建立 label 元素
+  var label = document.createElement("label");
+
+  if (OriginElem.getAttribute("alt")) label.innerHTML = OriginElem.getAttribute("alt");
+
+
+  var userLanguage = navigator.language || navigator.userLanguage;
+
+  if (userLanguage && userLanguage.toLowerCase() == "zh-tw") {
+    if (OriginElem.getAttribute("altzhtw")) label.innerHTML = OriginElem.getAttribute("altzhtw");
+  }
+
+  label.style.color = "white";
+  label.style.position = "absolute";
+
+  label.id = "tooltiptext_img";
+  // 將 label 元素添加到按鈕的父元素中
+  OriginElem.parentNode.appendChild(label);
+  label.style.top = "" + (OriginElem.height + 15) + "px";
+  label.style.left = "" + (OriginElem.getBoundingClientRect().x + (OriginElem.offsetWidth / 2) - (label.offsetWidth / 2)) + "px";
+}
+
+function onElementLeave() {
+  var elem = getByid("tooltiptext_img");
+  if (elem) elem.remove();
+}
+function hideAllDrawer(id) {
+  for (var obj of getClass("drawer")) {
+    if (id && obj.id == id) {
+
+    } else {
+      obj.style.display = "none";
     }
   }
 }

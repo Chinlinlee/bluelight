@@ -2,7 +2,7 @@ var openWriteTAG = false;
 function loadWriteTAG() {
     var span = document.createElement("SPAN")
     span.innerHTML =
-        `<img class="img TAG" alt="writeTAG" id="writeTAG" src="../image/icon/black/tag_off.png" width="50" height="50">`;
+        `<img class="img TAG" alt="writeTAG" onmouseover = "onElementOver(this);" onmouseleave = "onElementLeave();" id="writeTAG" src="../image/icon/black/tag_off.png" width="50" height="50">`;
     getByid("icon-list").appendChild(span);
 
     var span = document.createElement("SPAN")
@@ -93,7 +93,7 @@ getByid("writeTAG").onclick = function () {
         getByid('TagStyleDiv').style.display = '';
         set_BL_model('writeTAG');
     } else getByid('TagStyleDiv').style.display = 'none';
-    displayMark(viewportNumber);
+    displayMark();
     if (openWriteTAG == true) return;
 
     function download(text, name, type) {
@@ -172,7 +172,7 @@ function set_TAG_context(index) {
         k = index[2];
 
     function setTag(temp, replace, str, len) {
-        str = Null2Empty(str);
+        if (str == undefined || str == null) str = "";
         str = "" + str;
         temp = temp.replace("___" + replace + "___", "" + str);
         var length = ("" + str).length;
