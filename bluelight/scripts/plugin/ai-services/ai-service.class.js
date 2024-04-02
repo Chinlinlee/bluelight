@@ -1,3 +1,5 @@
+/// <reference path="./dicomParser.d.ts">
+
 /**
  * @typedef SelectorConfig
  * @property {string} name
@@ -15,7 +17,13 @@ import dcmjsMessage from "../../external/dcmjs/utilities/Message.js";
 import { AiServiceCustomElementBuilder } from "./ai-service-custom-element-builder.js";
 import {
     aiServiceConfig
-} from "./config.js"
+} from "./config.js";
+import { 
+    getCachedImageByInstanceUID,
+    getCachedImagesBySeriesUID,
+    getCachedImagesByStudyUID,
+    getCachedSeriesUIDsByStudyUID
+} from "./utils.js";
 
 const Toast = Swal.mixin({
     toast: true,
@@ -144,22 +152,15 @@ function setDicomFileObj(file) {
                 instanceUID: dataSet.string("x00080018")
             }
 
-            // use interval because of `parsedDicomList` may not set complete
             let setDicomFileObjInterval = setInterval(() => {
-
-                // Wait for instances info loading into global variable `parsedDicomList`
-                if (Object.prototype.hasOwnProperty.call(window.parsedDicomList, uids.studyUID)) {
-
-                    if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID], uids.seriesUID)) {
-
-                        if (Object.prototype.hasOwnProperty.call(window.parsedDicomList[uids.studyUID][uids.seriesUID], uids.instanceUID)) {
-                            clearInterval(setDicomFileObjInterval);
-
-                            let instanceObj = window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID];
-
-                            instanceObj.file = file;
-                            checkDicomInstanceExistInPacsAndSetStatus(uids);
-                        }
+                for (let imageId in getPatientbyImageID) {
+                    let image = getPatientbyImageID[imageId];
+                    let instanceUID = image.SopUID;
+                    if (instanceUID === uids.instanceUID) {
+                        clearInterval(setDicomFileObjInterval);
+                        image.file = file;
+                        checkDicomInstanceExistInPacsAndSetStatus(uids);
+                        break;
                     }
                 }
 
@@ -195,10 +196,11 @@ async function checkDicomInstanceExistInPacsAndSetStatus(uids) {
         });
 
         if (Array.isArray(instancesInfo)) {
+            let image = getCachedImageByInstanceUID(instanceUID);
             if (instancesInfo.length === 0) {
-                window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID]["existInPACS"] = false;
+                image.existInPACS = false;
             } else {
-                window.parsedDicomList[uids.studyUID][uids.seriesUID][uids.instanceUID]["existInPACS"] = true;
+                image.existInPACS = true;
             }
         }
 
@@ -206,6 +208,7 @@ async function checkDicomInstanceExistInPacsAndSetStatus(uids) {
         if (Object.prototype.hasOwnProperty.call(e, "xhr")) {
             console.log(e.xhr.status);
         }
+        console.error(e);
     }
 }
 
@@ -482,28 +485,26 @@ class AIService {
             let level = this.getUidLevel_(uids);
 
             if (level === "instance") {
-                let instanceObj = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID][uids.sopInstanceUID];
+                let instanceObj = getCachedImageByInstanceUID(uids.instanceUID);
 
-                this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
+                if (instanceObj)
+                    this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
 
             } else if (level === "series") {
-                let instanceObjArray = window.parsedDicomList[uids.studyInstanceUID][uids.seriesInstanceUID];
+                let instanceObjArray = getCachedImagesBySeriesUID(uids.seriesInstanceUID);
 
-                for (let instanceUid in instanceObjArray) {
-                    let instanceObj = instanceObjArray[instanceUid];
-                    if (typeof instanceObj === "object") {
-                        this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
+                for (let instance of instanceObjArray) {
+                    if (typeof instance === "object") {
+                        this.doPushToNotExistInstances_(notExistsInstances, uids, instance);
                     }
                 }
             } else if (level === "study") {
-                let seriesObjArray = window.parsedDicomList[uids.studyInstanceUID];
+                let seriesObjArray = getCachedImagesByStudyUID(uids.studyInstanceUID);
                 
-                for (let seriesUid in seriesObjArray) {
-                    let seriesObj = seriesObjArray[seriesUid];
-                    for(let instanceUid in seriesObj) {
-                        let instanceObj = seriesObj[instanceUid];
-                        if (typeof instanceObj === "object") {
-                            this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
+                for (let seriesImages of seriesObjArray) {
+                    for(let instance of seriesImages) {
+                        if (typeof instance === "object") {
+                            this.doPushToNotExistInstances_(notExistsInstances, uids, instance);
                         }
                     }
                 }
@@ -583,14 +584,21 @@ class AiServiceSelectorBuilder {
      */
     buildStudySelectElement(name, needPush) {
         let select = this.createBaseSelectElement_(name, "study");
-        for (let studyUID in parsedDicomList) {
-            let studyDataSet = parsedDicomList[studyUID];
-            let patientName = studyDataSet.PatientName;
+        let pushedStudyUIDs = [];
+        for(let imageId in getPatientbyImageID) {
+            let image = getPatientbyImageID[imageId];
+            /** @type { import("dicom-parser").DataSet } */
+            let dataset = image.image.data;
+            let studyUID = dataset.string("x0020000d");
+            if (pushedStudyUIDs.includes(studyUID)) continue;
+            pushedStudyUIDs.push(studyUID);
+            let patientID = dataset.string("x00100020");
             let studyOption = document.createElement("option");
             studyOption.value = studyUID;
-            studyOption.text = `${patientName} - ${studyUID}`;
+            studyOption.text = `${patientID} - ${studyUID}`;
             select.appendChild(studyOption);
         }
+
 
         this.buildedElements.push({
             name: name,
@@ -628,13 +636,11 @@ class AiServiceSelectorBuilder {
                     select,
                     `Please select the ${name} series`
                 );
-                let studyDataSet = parsedDicomList[selectedStudyUID];
-                for (let seriesUID in studyDataSet) {
-                    if (seriesUID === "PatientName") continue;
-                    let seriesDataSet = studyDataSet[seriesUID];
+                let seriesUIDs = getCachedSeriesUIDsByStudyUID(selectedStudyUID);
+                for (let seriesUID of seriesUIDs) {
                     let seriesOption = document.createElement("option");
                     seriesOption.value = seriesUID;
-                    seriesOption.text = `${seriesDataSet.SeriesDescription} - ${seriesUID}`;
+                    seriesOption.text = seriesUID;
                     select.appendChild(seriesOption);
                 }
             }
@@ -684,14 +690,13 @@ class AiServiceSelectorBuilder {
                     select,
                     `Please select the ${name} instance`
                 );
-                let seriesDataSet =
-                    parsedDicomList[selectedStudyUID][selectedSeriesUID];
-                for (let instanceUID in seriesDataSet) {
-                    if (instanceUID === "SeriesDescription") continue;
-                    let instanceDataSet = seriesDataSet[instanceUID];
+                let seriesDataSet = getCachedImagesBySeriesUID(selectedSeriesUID);
+                for (let instance of seriesDataSet) {
+                    let instanceUID = instance.image.data.string("x00080018");
+                    let instanceNumber = instance.image.data.string("x00200013");
                     let instanceOption = document.createElement("option");
                     instanceOption.value = instanceUID;
-                    instanceOption.text = `number: ${instanceDataSet.InstanceNumber} -> ${instanceUID}`;
+                    instanceOption.text = `number: ${instanceNumber} -> ${instanceUID}`;
                     select.appendChild(instanceOption);
                 }
             }
