@@ -15,7 +15,8 @@ import dcmjsMessage from "../../external/dcmjs/utilities/Message.js";
 import { AiServiceCustomElementBuilder } from "./ai-service-custom-element-builder.js";
 import {
     aiServiceConfig
-} from "./config.js"
+} from "./config.js";
+import { WorkItem } from "./workItem.js";
 
 const Toast = Swal.mixin({
     toast: true,
@@ -24,7 +25,7 @@ const Toast = Swal.mixin({
     showCancelButton: false,
     allowOutsideClick: false,
     timerProgressBar: true,
-    timer: 1000,
+    timer: 2500,
     didOpen: (toast) => {
         toast.addEventListener("mouseenter", Swal.stopTimer);
         toast.addEventListener("mouseleave", Swal.resumeTimer);
@@ -379,7 +380,6 @@ class AIService {
                     let uidLevel = ["study", "series", "sop"];
 
                     if (uidObj) {
-                        console.log(uidObj);
                         for (let i = 0; i < level.length; i++) {
                             let levelSelector = document.querySelector(`.select-${level[i]}`);
                             let levelSelectorOption = document.querySelector(`.select-${level[i]} option[value="${uidObj[uidLevel[i]]}"]`);
@@ -387,7 +387,7 @@ class AIService {
                             levelSelector.dispatchEvent(new Event("change"));
                         }
                     }
-                    
+
                 }
 
             },
@@ -398,7 +398,7 @@ class AIService {
                     dicomUidsList: []
                 };
                 let uidObj = {};
-                
+
                 // Get request body's dicom uid list
                 for (let buildedObj of selectorBuilder.buildedElements) {
                     if (buildedObj.level === "study") uidObj = {};
@@ -422,20 +422,20 @@ class AIService {
                 // Get request body's custom params
                 for (let customElementObj of customElementsBuilder.buildedElements) {
                     let paramType = customElementObj.getParamType();
-                    
+
                     if (!Object.prototype.hasOwnProperty.call(reqBody, paramType)) {
                         reqBody[paramType] = {};
                     }
 
                     try {
                         reqBody[paramType][customElementObj.getRequestField()] = customElementObj.getValue();
-                    } catch(e) {
+                    } catch (e) {
                         Swal.showValidationMessage(
                             e.message
                         );
                         return;
                     }
-                    
+
                 }
 
                 return reqBody;
@@ -457,18 +457,24 @@ class AIService {
                     }
                     UnFreezeUI();
                 }
-                
+
             }
 
             if (Object.prototype.hasOwnProperty.call(this.serviceOption, "customCall")) {
                 this.serviceOption.customCall(this.serviceOption, this.getAICallerUrl(), value);
             } else {
                 FreezeUI();
-                getAIResultLabelDicom(
-                    this.serviceOption,
-                    this.getAICallerUrl(),
-                    value
-                );
+                let workItem = WorkItem.getAiOrchestrationWorkItem(this.serviceOption.name, value.dicomUidsList);
+                await WorkItem.createWorkItem([workItem]);
+                Toast.fire({
+                    icon: "success",
+                    title: `${this.serviceOption.name} work item created`
+                });
+                // getAIResultLabelDicom(
+                //     this.serviceOption,
+                //     this.getAICallerUrl(),
+                //     value
+                // );
             }
 
         }
@@ -497,10 +503,10 @@ class AIService {
                 }
             } else if (level === "study") {
                 let seriesObjArray = window.parsedDicomList[uids.studyInstanceUID];
-                
+
                 for (let seriesUid in seriesObjArray) {
                     let seriesObj = seriesObjArray[seriesUid];
-                    for(let instanceUid in seriesObj) {
+                    for (let instanceUid in seriesObj) {
                         let instanceObj = seriesObj[instanceUid];
                         if (typeof instanceObj === "object") {
                             this.doPushToNotExistInstances_(notExistsInstances, uids, instanceObj);
