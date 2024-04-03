@@ -442,6 +442,15 @@ class DicomWebClient {
              */
             getInstanceUrl: (uids) => {
                 return `${this.wadoURL}/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}/instances/${uids.sopInstanceUID}`;
+            },
+            getPartialUrl: (uids) => {
+                if (uids.sopInstanceUID) {
+                    return this.WadoRs.getInstanceUrl(uids);
+                } else if (uids.seriesInstanceUID) {
+                    return this.WadoRs.getSeriesUrl(uids);
+                } else {
+                    return this.WadoRs.getStudiesUrl(uids);
+                }
             }
         };
 
