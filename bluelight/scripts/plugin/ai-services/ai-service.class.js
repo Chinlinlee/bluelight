@@ -642,11 +642,18 @@ class AiServiceSelectorBuilder {
                     select,
                     `Please select the ${name} series`
                 );
-                let seriesUIDs = getCachedSeriesUIDsByStudyUID(selectedStudyUID);
-                for (let seriesUID of seriesUIDs) {
+                let seriesDatasets = getCachedImagesByStudyUID(selectedStudyUID);
+                let appendedSeriesUids = [];
+                for (let series of seriesDatasets) {
+                    let seriesUID = series.image.data.string("x0020000e");
+                    if (appendedSeriesUids.includes(seriesUID)) continue;
+
+                    let seriesDescription = series.image.data.string("x0008103e");
+
+                    appendedSeriesUids.push(seriesUID);
                     let seriesOption = document.createElement("option");
                     seriesOption.value = seriesUID;
-                    seriesOption.text = seriesUID;
+                    seriesOption.text = `${seriesDescription} - ${seriesUID}`;
                     select.appendChild(seriesOption);
                 }
             }
