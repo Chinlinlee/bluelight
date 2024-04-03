@@ -1,0 +1,29 @@
+import { aiServiceConfig } from "./config.js";
+
+export class UpsNotificationReceiver {
+    /** @type { WebSocket } */
+    static ws;
+
+    constructor() {}
+
+    static init() {
+        let ws = UpsNotificationReceiver.getWebsocket();
+        ws.onopen = () => {
+            console.log(`connect to ups notification server success :${aiServiceConfig.upsSubUrl}`);
+        }
+
+        ws.onmessage = (msg) => {
+            console.log("message", msg.data);
+        }
+    }
+
+    static getWebsocket() {
+        if (!UpsNotificationReceiver.ws) {
+            UpsNotificationReceiver.ws = new WebSocket(aiServiceConfig.upsSubUrl);
+        }
+
+        return UpsNotificationReceiver.ws;
+    }
+
+
+}

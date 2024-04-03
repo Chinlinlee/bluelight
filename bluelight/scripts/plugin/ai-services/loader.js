@@ -13,6 +13,7 @@ import {
 import {
     aiServiceConfig
 } from "./config.js";
+import { UpsNotificationReceiver } from "./webSocket.js"
 
 let checkReadyInterval = setInterval(() => {
     if (document.readyState === "complete") {
@@ -37,6 +38,7 @@ let checkReadyInterval = setInterval(() => {
         aiServiceImg.onclick = aiServiceImgClick;
 
         initAiServices();
+        UpsNotificationReceiver.init();
 
         clearInterval(checkReadyInterval);
     }
