@@ -1,4 +1,6 @@
 export const aiServiceConfig = {
+    upsUrl: "http://dicom.ai.example.com/dicom-web",
+    upsSubUrl: "ws://dicom.ai.example.com/ws/subscribers/AI_ORCHESTRATOR",
     baseUrl: "https://dicom.ai.example.com",
     services: [
         {
