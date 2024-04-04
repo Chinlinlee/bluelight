@@ -134,4 +134,20 @@ export class WorkItem {
     
         return workItemTemplate;
     }
+
+    static async getWorkItem(upsInstanceUid) {
+        let fetchWorkItemRes = await fetch(`${aiServiceConfig.upsUrl}/workitems/${upsInstanceUid}`, {
+            method: "GET",
+            headers: {
+                "accept": "application/dicom+json",
+            }
+        });
+        if (fetchWorkItemRes.status === 200) {
+            /** @type { any[] } */
+            let workItem = await fetchWorkItemRes.json();
+            return workItem?.[0];
+        } else {
+            throw new Error("The request failed.");
+        }
+    }
 }
