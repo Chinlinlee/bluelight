@@ -420,7 +420,7 @@ class DicomWebClient {
              * @param {string} uids.studyInstanceUID
              */
             getStudiesUrl: (uids) => {
-                return `${this.wadoURL}/${uids.studyInstanceUID}`;
+                return `${this.wadoURL}/studies/${uids.studyInstanceUID}`;
             },
 
             /**
@@ -430,7 +430,7 @@ class DicomWebClient {
              * @param {string} uids.seriesInstanceUID
              */
             getSeriesUrl: (uids) => {
-                return `${this.wadoURL}/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}`;
+                return `${this.wadoURL}/studies/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}`;
             },
 
             /**
@@ -441,7 +441,7 @@ class DicomWebClient {
              * @param {string} uids.sopInstanceUID
              */
             getInstanceUrl: (uids) => {
-                return `${this.wadoURL}/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}/instances/${uids.sopInstanceUID}`;
+                return `${this.wadoURL}/studies/${uids.studyInstanceUID}/series/${uids.seriesInstanceUID}/instances/${uids.sopInstanceUID}`;
             },
             getPartialUrl: (uids) => {
                 if (uids.sopInstanceUID) {
