@@ -15,6 +15,13 @@ export class UpsNotificationReceiver {
         ws.onmessage = (msg) => {
             console.log("message", msg.data);
         }
+        
+        ws.onclose = (e) => {
+            console.log("websocket closed. Reconnect will be attempted in 1 second.", e.reason);
+            setTimeout(() => {
+                UpsNotificationReceiver.init();
+            }, 1000);
+        }
     }
 
     static getWebsocket() {
