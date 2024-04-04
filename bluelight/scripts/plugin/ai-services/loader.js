@@ -31,7 +31,7 @@ let checkReadyInterval = setInterval(() => {
         document.getElementsByTagName("head")[0].appendChild(sweetalert2CssLink);
 
         let span = document.createElement("span");
-        span.innerHTML = `<img class="img AI-SERVICE-IMG pointer" alt="ai service" id="aiServiceImg" src="../image/icon/black/ai-service.png" width="50" height="50">`;
+        span.innerHTML = `<img class="img AI-SERVICE-IMG pointer" alt="ai service" id="aiServiceImg" src="../image/icon/black/ai-service.png" width="50" height="50" onmouseover="onElementOver(this)" onmouseleave="onElementLeave();">`;
         document.getElementById("icon-list").appendChild(span);
 
         let aiServiceImg = document.querySelector(".AI-SERVICE-IMG");
