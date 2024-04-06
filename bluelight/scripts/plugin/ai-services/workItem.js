@@ -1,4 +1,5 @@
 import { aiServiceConfig } from "./config.js";
+import { getFormattedDateTimeNow } from "./utils.js";
 
 export class WorkItem {
     constructor() {}
@@ -55,6 +56,12 @@ export class WorkItem {
                 "vr": "CS",
                 "Value": [
                     "READY"
+                ]
+            },
+            "00404005": {
+                "vr": "DT",
+                "Value": [
+                    `${getFormattedDateTimeNow()}`
                 ]
             },
             "00404070": {

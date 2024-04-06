@@ -1,5 +1,5 @@
 export function getCachedImageByInstanceUID(id) {
-    for(let imageId in window.getPatientbyImageID) {
+    for (let imageId in window.getPatientbyImageID) {
         let image = window.getPatientbyImageID[imageId];
         let imageInstanceUID = image.SopUID;
         if (imageInstanceUID === id) {
@@ -16,7 +16,7 @@ export function getCachedImageByInstanceUID(id) {
  */
 export function getCachedImagesByStudyUID(id) {
     let images = [];
-    for(let imageId in window.getPatientbyImageID) {
+    for (let imageId in window.getPatientbyImageID) {
         let image = window.getPatientbyImageID[imageId];
         let dataset = image.image.data;
         let imageStudyUID = dataset.string("x0020000d");
@@ -33,7 +33,7 @@ export function getCachedImagesByStudyUID(id) {
  */
 export function getCachedImagesBySeriesUID(id) {
     let images = [];
-    for(let imageId in window.getPatientbyImageID) {
+    for (let imageId in window.getPatientbyImageID) {
         let image = window.getPatientbyImageID[imageId];
         let dataset = image.image.data;
         let imageSeriesUID = dataset.string("x0020000e");
@@ -47,7 +47,7 @@ export function getCachedImagesBySeriesUID(id) {
 
 export function getCachedSeriesUIDsByStudyUID(id) {
     let seriesUIDs = [];
-    for(let imageId in window.getPatientbyImageID) {
+    for (let imageId in window.getPatientbyImageID) {
         let image = window.getPatientbyImageID[imageId];
         let dataset = image.image.data;
         let imageStudyUID = dataset.string("x0020000d");
@@ -58,4 +58,16 @@ export function getCachedSeriesUIDsByStudyUID(id) {
         }
     }
     return seriesUIDs;
+}
+
+export function getFormattedDateTimeNow() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+    return `${year}${month}${day}${hours}${minutes}${seconds}.${milliseconds}`;
 }
