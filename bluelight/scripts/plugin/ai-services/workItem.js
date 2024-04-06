@@ -30,6 +30,12 @@ export class WorkItem {
 
     static getAiOrchestrationWorkItem(aiModelName, dicomUidsList) {
         let workItemTemplate = {
+            "0020000D": {
+                "vr": "UI",
+                "Value": [
+                    `${dicomUidsList[0].studyInstanceUID}`
+                ]
+            },
             "00741000": {
                 "vr": "CS",
                 "Value": [
