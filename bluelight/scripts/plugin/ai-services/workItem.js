@@ -44,7 +44,7 @@ export class WorkItem {
             },
             "00741200": {
                 "Value": [
-                    "HIGH"
+                    "MEDIUM"
                 ],
                 "vr": "CS"
             },
