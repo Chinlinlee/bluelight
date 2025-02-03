@@ -28,7 +28,7 @@
                 }
                 this.setRequestHeader('Authorization', "Bearer " + token);
             };
-            loadLdcmview();
+            readAllJson(readJson);
         }
     }
 
