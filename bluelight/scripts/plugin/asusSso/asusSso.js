@@ -44,7 +44,8 @@
 
             XMLHttpRequest.prototype.open = function () {
                 this.origOpen.apply(this, arguments);
-                let decodedToken = JSON.parse(atob(token.split(".")[1]));
+                let savedToken = localStorage.getItem("asusWebStorageToken");
+                let decodedToken = JSON.parse(atob(savedToken.split(".")[1]));
                 let expiresAt = decodedToken.exp;
                 let currentTime = Math.floor(Date.now() / 1000);
 
@@ -52,9 +53,15 @@
                     localStorage.setItem("bluelightUrl", window.location.href);
                     window.location.href = raccoonLoginUrl;
                 }
-                this.setRequestHeader('Authorization', "Bearer " + token);
+                this.setRequestHeader('Authorization', "Bearer " + savedToken);
             };
-            readAllJson(readJson);
+            let checkTokenInterval = setInterval(() => {
+                let savedToken = localStorage.getItem("asusWebStorageToken");
+                if (savedToken) {
+                    clearInterval(checkTokenInterval);
+                    readAllJson(readJson);
+                }
+            }, 1000);
         }
     }
 
