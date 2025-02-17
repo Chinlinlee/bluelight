@@ -61,7 +61,7 @@
                     clearInterval(checkTokenInterval);
                     readAllJson(readJson);
                 }
-            }, 1000);
+            }, 150);
         }
     }
 
