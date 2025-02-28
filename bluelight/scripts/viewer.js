@@ -409,14 +409,15 @@ function loadPicture(url) {
 }
 
 function loadDicomDataSet(fileData, loadimage = true, url, fromLocal = false) {
-    var byteArray = new Uint8Array(fileData);
+    var byteArray = fileData.constructor.name == 'Uint8Array' ? fileData : new Uint8Array(fileData);
+
     try {
         var dataSet = dicomParser.parseDicom(byteArray);
     } catch (ex) {
         if (loadimage && ImageManager.NumOfPreLoadSops >= 1) ImageManager.NumOfPreLoadSops -= 1;
+        console.log(ex);
         return;
     }
-
 
     //PDF
     if (dataSet.string(Tag.MediaStorageSOPClassUID) == SOPClassUID.EncapsulatedPDFStorage)
@@ -465,23 +466,19 @@ function loadDicomDataSet(fileData, loadimage = true, url, fromLocal = false) {
 }
 
 function loadDICOMFromUrl(url, loadimage = true) {
-    var oReq = new XMLHttpRequest();
-    try { oReq.open("get", url, true); }
-    catch (e) { console.log(e); }
-
-    oReq.responseType = "arraybuffer";
-    if (loadimage) {
-        oReq.onreadystatechange = function (oEvent) {
-            if (oReq.readyState == 4 && oReq.status == 200)
-                loadDicomDataSet(oReq.response, true, url, false);
-        }
-    } else {
-        oReq.onreadystatechange = function (oEvent) {
-            if (oReq.readyState == 4 && oReq.status == 200)
-                loadDicomDataSet(oReq.response, false, url, false);
-        }
+    var headers = {
+        'user-agent': 'Mozilla/4.0 MDN Example', 'content-type': 'multipart/related; type=application/dicom;'
     }
-    oReq.send();
+    var wadoToken = ConfigLog.WADO.token;
+    for (var to = 0; to < Object.keys(wadoToken).length; to++) {
+        if (wadoToken[Object.keys(wadoToken)[to]] != "")
+            headers[Object.keys(wadoToken)[to]] = wadoToken[Object.keys(wadoToken)[to]];
+    }
+
+    fetch(url, { headers, }).then(async function (res) {
+        let oReq = await res.arrayBuffer();
+        loadDicomDataSet(oReq, loadimage == true, url, false);
+    }).finally(() => LoadFileInBatches.finishOne());
 }
 
 function initNewCanvas() {

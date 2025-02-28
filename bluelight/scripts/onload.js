@@ -115,7 +115,7 @@ function readDicomTags(url, setLabelPadding) {
   //LB代表left  bottom
   //RB代表right bottom
   request.onload = function () {
-    if (request.readyState != 4)  { return; }
+    if (request.readyState != 4) { return; }
     var responseJson = JSON.parse(request.responseText);
     var DicomResponse = responseJson["default"];
     dicomtags.labelPadding = parseInt(DicomResponse["labelPadding"]) ? parseInt(DicomResponse["labelPadding"]) : 5;
@@ -236,7 +236,7 @@ function readConfigJson(url, readAllJson, readJson) {
     config.QIDO = {};
 
     tempResponse = DicomResponse["DICOMWebServersConfig"][0];
-    tempConfig = config.QIDO
+    tempConfig = config.QIDO;
     tempConfig.hostname = tempResponse["QIDO-hostname"];
     tempConfig.https = tempResponse["QIDO-enableHTTPS"] == true ? "https" : "http";
     tempConfig.PORT = tempResponse["QIDO-PORT"];
@@ -339,8 +339,8 @@ function getJsonByInstanceRequest(InstanceRequest) {
     try {
       if (getValue(DicomResponse[i]["00200013"]) == min || DicomResponse.length == 1) {
         //預載入DICOM至Viewport
-        if (ConfigLog.WADO.WADOType == "URI") loadDICOMFromUrl(url);
-        else if (ConfigLog.WADO.WADOType == "RS") wadorsLoader(url);
+        if (ConfigLog.WADO.WADOType == "URI") LoadFileInBatches.wadoPreLoad(url);
+        else if (ConfigLog.WADO.WADOType == "RS") LoadFileInBatches.wadoPreLoad(url);
         firstUrl = url;
       }
     } catch (ex) { console.log(ex); }
