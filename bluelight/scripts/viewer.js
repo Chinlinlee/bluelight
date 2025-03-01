@@ -51,115 +51,219 @@ VIEWPORT.loadViewport = function (viewport, image, viewportNum) {
 //VIEWPORT.loadViewportList = ['initTransform', 'putLabel2Element', 'delPDFView', 'settype'];
 VIEWPORT.loadViewportList = ['initTransform', 'putLabel2Element'];
 
+/**
+ * Converts a Uint8Array to a String.
+ * @param {Uint8Array} array that should be converted
+ * @param {Number} offset array offset in case only subset of array items should be extracted (default: 0)
+ * @param {Number} limit maximum number of array items that should be extracted (defaults to length of array)
+ * @returns {String}
+ */
+function uint8ArrayToString(arr, offset, limit) {
+    offset = offset || 0;
+    limit = limit || arr.length - offset;
+    let str = "";
+    for (let i = offset; i < offset + limit; i++) {
+        str += String.fromCharCode(arr[i]);
+    }
+    return str;
+}
+
+/**
+ * Converts a String to a Uint8Array.
+ * @param {String} str string that should be converted
+ * @returns {Uint8Array}
+ */
+function stringToUint8Array(str) {
+    const arr = new Uint8Array(str.length);
+    for (let i = 0, j = str.length; i < j; i++) {
+        arr[i] = str.charCodeAt(i);
+    }
+    return arr;
+}
+
+/**
+ * Identifies the boundary in a multipart/related message header.
+ * @param {String} header message header
+ * @returns {String} boundary
+ */
+function identifyBoundary(header) {
+    const parts = header.split("\r\n");
+
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i].substr(0, 2) === "--") {
+            return parts[i];
+        }
+    }
+}
+
+/**
+ * Checks whether a given token is contained by a message at a given offset.
+ * @param {Uint8Array} message message content
+ * @param {Uint8Array} token substring that should be present
+ * @param {Number} offset offset in message content from where search should start
+ * @returns {Boolean} whether message contains token at offset
+ */
+function containsToken(message, token, offset = 0) {
+    if (offset + token.length > message.length) {
+        return false;
+    }
+
+    let index = offset;
+    for (let i = 0; i < token.length; i++) {
+        if (token[i] !== message[index++]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Finds a given token in a message at a given offset.
+ * @param {Uint8Array} message message content
+ * @param {Uint8Array} token substring that should be found
+ * @param {Number} offset message body offset from where search should start
+ * @returns {Boolean} whether message has a part at given offset or not
+ */
+function findToken(message, token, offset = 0, maxSearchLength) {
+    let searchLength = message.length;
+    if (maxSearchLength) {
+        searchLength = Math.min(offset + maxSearchLength, message.length);
+    }
+
+    for (let i = offset; i < searchLength; i++) {
+        // If the first value of the message matches
+        // the first value of the token, check if
+        // this is the full token.
+        if (message[i] === token[0]) {
+            if (containsToken(message, token, i)) {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+
+
+/**
+ * Decode a Multipart encoded ArrayBuffer and return the components as an Array.
+ *
+ * @param {ArrayBuffer} response Data encoded as a 'multipart/related' message
+ * @returns {Array} The content
+ */
+function multipartDecode(response) {
+    const message = new Uint8Array(response);
+
+    /* Set a maximum length to search for the header boundaries, otherwise
+       findToken can run for a long time
+    */
+    const maxSearchLength = 1000;
+
+    // First look for the multipart mime header
+    let separator = stringToUint8Array("\r\n\r\n");
+    let headerIndex = findToken(message, separator, 0, maxSearchLength);
+    if (headerIndex === -1) {
+        throw new Error("Response message has no multipart mime header");
+    }
+
+    const header = uint8ArrayToString(message, 0, headerIndex);
+    const boundaryString = identifyBoundary(header);
+    if (!boundaryString) {
+        throw new Error("Header of response message does not specify boundary");
+    }
+
+    const boundary = stringToUint8Array(boundaryString);
+    const components = [];
+
+    let offset = headerIndex + separator.length;
+
+    // Loop until we cannot find any more boundaries
+    let boundaryIndex;
+
+    while (boundaryIndex !== -1) {
+        // Search for the next boundary in the message, starting
+        // from the current offset position
+        boundaryIndex = findToken(message, boundary, offset);
+
+        // If no further boundaries are found, stop here.
+        if (boundaryIndex === -1) {
+            break;
+        }
+
+        // Extract data from response message, excluding "\r\n"
+        const spacingLength = 2;
+        const length = boundaryIndex - offset - spacingLength;
+        const data = response.slice(offset, offset + length);
+
+        // Add the data to the array of results
+        components.push(data);
+
+        // find the end of the boundary
+        var boundaryEnd = findToken(
+            message,
+            separator,
+            boundaryIndex + 1,
+            maxSearchLength
+        );
+        if (boundaryEnd === -1) break;
+        // Move the offset to the end of the identified boundary
+        offset = boundaryEnd + separator.length;
+    }
+
+    return components;
+}
+
+/**
+ * Create a random GUID
+ *
+ * @return {string}
+ */
+function guid() {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+            .toString(16)
+            .substring(1);
+    }
+    return (
+        s4() +
+        s4() +
+        "-" +
+        s4() +
+        "-" +
+        s4() +
+        "-" +
+        s4() +
+        "-" +
+        s4() +
+        s4() +
+        s4()
+    );
+}
+
 function wadorsLoader(url, onlyload) {
-    var data = [];
+    let headers = {
+        'user-agent': 'Mozilla/4.0 MDN Example',
+        'content-type': 'multipart/related; type=application/dicom;'
+    }
+    let wadoToken = ConfigLog.WADO.token;
+    for (let to = 0; to < Object.keys(wadoToken).length; to++) {
+        if (wadoToken[Object.keys(wadoToken)[to]] != "") {
+            headers[Object.keys(wadoToken)[to]] = wadoToken[Object.keys(wadoToken)[to]];
+            // InstanceRequest.setRequestHeader("" + Object.keys(wadoToken)[to], "" + wadoToken[Object.keys(wadoToken)[to]]);
+        }
+    }
+    fetch(url, {
+        headers,
+    })
+        .then(async function (res) {
+            let resBlob = await res.arrayBuffer();
 
-    function getData() {
-        var headers = {
-            'user-agent': 'Mozilla/4.0 MDN Example',
-            'content-type': 'multipart/related; type=application/dicom;'
-        }
-        var wadoToken = ConfigLog.WADO.token;
-        for (var to = 0; to < Object.keys(wadoToken).length; to++) {
-            if (wadoToken[Object.keys(wadoToken)[to]] != "") {
-                headers[Object.keys(wadoToken)[to]] = wadoToken[Object.keys(wadoToken)[to]];
-                // InstanceRequest.setRequestHeader("" + Object.keys(wadoToken)[to], "" + wadoToken[Object.keys(wadoToken)[to]]);
-            }
-        }
-        fetch(url, {
-            headers,
+            let buf = multipartDecode(resBlob);
+            var url = URL.createObjectURL(new Blob([...buf], { type: "application/dicom" }));
+            if (onlyload == true) loadDICOMFromUrl(url, false);
+            else loadDICOMFromUrl(url);
         })
-            .then(async function (res) {
-                let resBlob = await res.arrayBuffer();
-                let intArray = new Uint8Array(resBlob);
-                var string = '';
-                for (let i = 0; i < intArray.length; i++) {
-                    string += String.fromCodePoint(intArray[i]);
-                }
-
-                var url = await stowMultipartRelated(string);
-                if (onlyload == true) loadDICOMFromUrl(url, false);
-                else loadDICOMFromUrl(url);
-            })
-            .catch(function (err) { })
-    }
-    async function stowMultipartRelated(iData) {
-        let multipartMessage = iData;
-        let startBoundary = multipartMessage.split("\r\n")[0];
-        let matches = multipartMessage.matchAll(new RegExp(startBoundary, "gi"));
-        let fileEndIndex = [];
-        let fileStartIndex = [];
-        for (let match of matches) {
-            fileEndIndex.push(match.index - 2);
-        }
-        fileEndIndex = fileEndIndex.slice(1);
-        let data = multipartMessage.split("\r\n");
-        let filename = [];
-        let files = [];
-        //let contentDispositionList = [];
-        //let contentTypeList = [];
-        for (let i in data) {
-            let text = data[i];
-            if (text.includes("Content-Disposition")) {
-                //contentDispositionList.push(text);
-                let textSplitFileName = text.split("filename=")
-                filename.push(textSplitFileName[textSplitFileName.length - 1].replace(/"/gm, ""));
-            } else if (text.includes("Content-Type")) {
-                //contentTypeList.push(text);
-            }
-        }
-        //contentDispositionList = _.uniq(contentDispositionList);
-        //contentTypeList = _.uniq(contentTypeList);
-        let teststring = ["Content-Type", "Content-Length", "MIME-Version"]
-        let matchesIndex = []
-        for (let type of teststring) {
-            let contentTypeMatches = multipartMessage.matchAll(new RegExp(`${type}.*[\r\n|\r|\n]$`, "gim"));
-            for (let match of contentTypeMatches) {
-                matchesIndex.push({
-                    index: match.index,
-                    length: match['0'].length
-                })
-            }
-        }
-
-        function maxBy(array, n) {
-            let result;
-            if (!array) return result;
-            var tempN = Number.MIN_VALUE;
-            for (const obj of array) {
-                if (obj && obj[n]) {
-                    var value = obj[n];
-                    if (!isNaN(value) && value > tempN) {
-                        tempN = value;
-                        result = obj;
-                    }
-                }
-            }
-            return result;
-        }
-
-        let maxIndex = maxBy(matchesIndex, "index");
-        fileStartIndex.push(maxIndex.index + maxIndex.length + 3);
-        for (let i in fileEndIndex) {
-            let fileData = multipartMessage.substring(fileStartIndex[i], fileEndIndex[i]);
-            files.push(fileData);
-        }
-
-        function str2ab(str) {
-            var buf = new ArrayBuffer(str.length); // 2 bytes for each char
-            var bufView = new Uint8Array(buf);
-            for (var i = 0, strLen = str.length; i < strLen; i++) {
-                bufView[i] = str.charCodeAt(i);
-            }
-            return buf;
-        }
-        let buf = str2ab(files[0]);
-
-        var url = URL.createObjectURL(new Blob([buf], { type: "application/dicom" }));
-        return url;
-
-    }
-    return getData();
+        .catch(function (err) { })
 }
 
 function PdfLoader(pdf, Sop) {
