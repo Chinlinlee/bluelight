@@ -359,8 +359,7 @@ class BlueLightViewPort {
             element.ScrollBar.setIndex(parseInt(element.framesNumber));
             element.ScrollBar.reflesh();
         } else {
-            // var sopList = sortInstance(element.sop);
-            let sopList = ImageManager.findSeries(element.QRLevels.series).Sop;
+            let sopList = ImageManager.findSeries(element.series).Sop;
             element.ScrollBar.setTotal(sopList.length);
             element.ScrollBar.setIndex(sopList.findIndex((l) => l.InstanceNumber == element.tags.InstanceNumber));
             element.ScrollBar.reflesh();
