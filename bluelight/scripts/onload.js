@@ -339,8 +339,8 @@ function getJsonByInstanceRequest(InstanceRequest) {
     try {
       if (getValue(DicomResponse[i]["00200013"]) == min || DicomResponse.length == 1) {
         //預載入DICOM至Viewport
-        if (ConfigLog.WADO.WADOType == "URI") LoadFileInBatches.wadoPreLoad(url);
-        else if (ConfigLog.WADO.WADOType == "RS") LoadFileInBatches.wadoPreLoad(url);
+        if (ConfigLog.WADO.WADOType == "URI") loadDICOMFromUrl(url);
+        else if (ConfigLog.WADO.WADOType == "RS") wadorsLoader(url);
         firstUrl = url;
       }
     } catch (ex) { console.log(ex); }
