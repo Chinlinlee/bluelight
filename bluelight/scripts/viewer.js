@@ -244,6 +244,35 @@ function guid() {
     );
 }
 
+const MAX_CONCURRENT_FETCH = 10;
+let currentFetchCount = 0;
+let fetchQueue = [];
+
+function runNextFetch() {
+    if (fetchQueue.length > 0 && currentFetchCount < MAX_CONCURRENT_FETCH) {
+        const nextFetch = fetchQueue.shift();
+        nextFetch();
+    }
+}
+
+function limitedFetch(fetchFunc) {
+    if (currentFetchCount < MAX_CONCURRENT_FETCH) {
+        currentFetchCount++;
+        fetchFunc().finally(() => {
+            currentFetchCount--;
+            runNextFetch();
+        });
+    } else {
+        fetchQueue.push(() => {
+            currentFetchCount++;
+            fetchFunc().finally(() => {
+                currentFetchCount--;
+                runNextFetch();
+            });
+        });
+    }
+}
+
 function wadorsLoader(url, onlyload) {
     let headers = {
         'user-agent': 'Mozilla/4.0 MDN Example',
@@ -257,13 +286,15 @@ function wadorsLoader(url, onlyload) {
         }
     }
     
-    fetch(url, { headers, }).then(async function (res) {
-        let resBlob = await res.arrayBuffer();
-        let decodedBuffers = multipartDecode(resBlob);
-        for (let decodedBuf of decodedBuffers) {
-            loadDicomDataSet(decodedBuf, !(onlyload == true), url, false, 'mht');
-        }
-    }).finally(() => LoadFileInBatches.finishOne());
+    limitedFetch(() => 
+        fetch(url, { headers, }).then(async function (res) {
+            let resBlob = await res.arrayBuffer();
+            let decodedBuffers = multipartDecode(resBlob);
+            for (let decodedBuf of decodedBuffers) {
+                    loadDicomDataSet(decodedBuf, !(onlyload == true), url, false, 'mht');
+            }
+        })
+    );
 }
 
 /**
@@ -667,10 +698,12 @@ function loadDICOMFromUrl(url, loadimage = true) {
             headers[Object.keys(wadoToken)[to]] = wadoToken[Object.keys(wadoToken)[to]];
     }
 
-    fetch(url, { headers, }).then(async function (res) {
-        let oReq = await res.arrayBuffer();
-        loadDicomDataSet(oReq, loadimage == true, url, false);
-    }).finally(() => LoadFileInBatches.finishOne());
+    limitedFetch(async () => {
+        fetch(url, { headers, }).then(async function (res) {
+            let oReq = await res.arrayBuffer();
+            loadDicomDataSet(oReq, loadimage == true, url, false);
+        }).finally(() => LoadFileInBatches.finishOne());
+    });
 }
 
 function initNewCanvas() {
