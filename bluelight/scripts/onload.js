@@ -449,7 +449,7 @@ function getJsonBySeriesRequest(SeriesRequest) {
   }
 
   let SeriesResponse = SeriesRequest.response;
-  
+
   // Check if SeriesResponse is an array and has items
   if (!Array.isArray(SeriesResponse) || SeriesResponse.length === 0) {
     console.error("Error: Series response is not a valid array or is empty");
@@ -506,21 +506,21 @@ function readJson(url) {
   }
 
   // Add error handling
-  SeriesRequest.onerror = function() {
+  SeriesRequest.onerror = function () {
     console.error("Network error occurred while fetching series data");
     showDicomStatus("PACS server error", true);
   };
 
   // Handle timeouts
   SeriesRequest.timeout = 30000; // 30 seconds timeout
-  SeriesRequest.ontimeout = function() {
+  SeriesRequest.ontimeout = function () {
     console.error("Request timed out");
     showDicomStatus("PACS server error", true);
   };
 
   //發送以Series為單位的請求
   SeriesRequest.send();
-  SeriesRequest.onload = function() {
+  SeriesRequest.onload = function () {
     if (SeriesRequest.status !== 200) {
       console.error("HTTP error:", SeriesRequest.status);
       showDicomStatus("PACS server error");
