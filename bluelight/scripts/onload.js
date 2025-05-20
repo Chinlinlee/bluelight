@@ -5,6 +5,8 @@ var ConfigLog = {};
 //代表config檔已經載入完畢 --*
 var configOnload = false;
 
+window.seriesLoadingImageCount = new Map();
+
 window.onload = function () {
   //執行其他Script提供的高優先度onload函數
   onloadFunction.ExecuteFirst();
@@ -307,7 +309,7 @@ function getValue(obj) {
 function getJsonByInstanceRequest(InstanceRequest) {
   let DicomResponse = InstanceRequest.response;
   var min = 1000000000;
-  var firstUrl;
+  
   //取得最小的Instance Number
   for (var i = 0; i < DicomResponse.length; i++) {
     try {
@@ -393,6 +395,19 @@ function chunk(array, size) {
 function processInstance(instance) {
   return new Promise((resolve, reject) => {
     try {
+      let seriesUid = instance["0020000E"].Value[0];
+      let storedSeriesImageCount = window.seriesLoadingImageCount.get(seriesUid);
+      if (!storedSeriesImageCount) {
+        window.seriesLoadingImageCount.set(seriesUid, {
+          loaded: 0,
+          total: 1
+        });
+      } else {
+        window.seriesLoadingImageCount.set(seriesUid, {
+          loaded: storedSeriesImageCount.loaded,
+          total: storedSeriesImageCount.total + 1
+        });
+      }
       const instanceResponse = {
         response: [instance],
       };

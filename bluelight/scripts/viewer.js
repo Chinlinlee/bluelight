@@ -1,3 +1,5 @@
+window.seriesLoadingLocks = new Map();
+
 
 let VIEWPORT = {};
 VIEWPORT.fixRow = null;
@@ -284,8 +286,8 @@ function limitedFetch(fetchFunc) {
 }
 
 function wadorsLoader(url, onlyload) {
-    // Show loading status
-    showDicomStatus("Loading images...");
+    let seriesUid = url.split("/").at(-3);
+    showLoadingImageStatus(seriesUid);
 
     let headers = {
         'user-agent': 'Mozilla/4.0 MDN Example',
@@ -311,8 +313,11 @@ function wadorsLoader(url, onlyload) {
             let decodedBuffers = multipartDecode(resBlob);
             for (let decodedBuf of decodedBuffers) {
                 loadDicomDataSet(decodedBuf, !(onlyload == true), url, false, 'mht');
+                incrementSeriesLoadingImageCount(seriesUid).then(() => {
+                    showLoadingImageStatus(seriesUid);
+                    hideLoadingImageStatus(seriesUid);
+                });
             }
-            hideDicomStatus();
         })
     );
 }
@@ -528,8 +533,8 @@ function loadDicomDataSet(fileData, loadimage = true, url, fromLocal = false, fi
 }
 
 function loadDICOMFromUrl(url, loadimage = true) {
-    // Show loading status
-    showDicomStatus("Loading images...");
+    let seriesUid = new URL(url).searchParams.get("seriesUID");
+    showLoadingImageStatus(seriesUid);
 
     let headers = {
         'user-agent': 'Mozilla/4.0 MDN Example',
@@ -552,14 +557,70 @@ function loadDICOMFromUrl(url, loadimage = true) {
 
             let oReq = await res.arrayBuffer();
             loadDicomDataSet(oReq, loadimage == true, url, false);
-            hideDicomStatus();
+            incrementSeriesLoadingImageCount(seriesUid).then(() => {
+                showLoadingImageStatus(seriesUid);
+                hideLoadingImageStatus(seriesUid);
+            });
         });
     });
 }
 
+function incrementSeriesLoadingImageCount(seriesUid) {
+    if (!window.seriesLoadingLocks.has(seriesUid)) {
+        window.seriesLoadingLocks.set(seriesUid, Promise.resolve());
+    }
+
+    const currentLock = window.seriesLoadingLocks.get(seriesUid);
+
+    const newLock = currentLock.then(() => {
+        let seriesLoadingImageCount = window.seriesLoadingImageCount.get(seriesUid);
+        if (seriesLoadingImageCount) {
+            window.seriesLoadingImageCount.set(seriesUid, {
+                loaded: seriesLoadingImageCount.loaded + 1,
+                total: seriesLoadingImageCount.total
+            });
+        }
+        return true;
+    });
+
+    window.seriesLoadingLocks.set(seriesUid, newLock);
+
+    return newLock;
+}
+
+function showLoadingImageStatus(seriesUid) {
+    showDicomStatus("Downloading images...");
+    let seriesLoadingImageCount = window.seriesLoadingImageCount.get(seriesUid);
+    if (seriesLoadingImageCount) {
+        // 更新左側面板的加載狀態
+        let series_div = leftLayout.findSeries(seriesUid);
+        if (series_div && series_div.ImgDiv) {
+            // 移除舊的加載標籤（如果存在）
+            let oldLoadingLabel = series_div.ImgDiv.querySelector('.LeftImgLoadingLabel');
+            if (oldLoadingLabel) oldLoadingLabel.remove();
+            
+            // 創建新的加載標籤
+            let loadingLabel = document.createElement("label");
+            loadingLabel.className = "LeftImgLoadingLabel";
+            loadingLabel.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border:1px solid #fff;border-radius:50%;border-top-color:transparent;animation:spin 1s linear infinite;margin-right:2px;"></span>${seriesLoadingImageCount.loaded}/${seriesLoadingImageCount.total}`;
+            
+            // 添加到ImgDiv
+            series_div.ImgDiv.appendChild(loadingLabel);
+            
+            // 確保有spinning動畫的樣式
+            if (!document.getElementById('spinner-style-left')) {
+                var s = document.createElement('style');
+                s.id = 'spinner-style-left';
+                s.textContent = '@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}';
+                s.textContent += '.LeftImgLoadingLabel {position:absolute; color:yellow; bottom:1px; left:1px; background-color:rgba(0,0,0,0.7); font-size:smaller; z-index:10;}';
+                document.head.appendChild(s);
+            }
+        }
+    }
+}
+
 // Add this near the top of onload.js if showDicomStatus isn't available
 function showDicomStatus(message, isError = false) {
-    console.log("Status update:", message, "isError:", isError);
     var statusDiv = document.getElementById('dicomStatusIndicator');
     if (statusDiv) {
         if (isError) {
@@ -577,6 +638,30 @@ function showDicomStatus(message, isError = false) {
         }
         statusDiv.style.display = 'block';
     }
+}
+
+function hideLoadingImageStatus(seriesUid) {
+    let seriesLoadingImageCount = window.seriesLoadingImageCount.get(seriesUid);
+    if (seriesLoadingImageCount.loaded == seriesLoadingImageCount.total) {
+        // 移除左側面板的加載標籤
+        let series_div = leftLayout.findSeries(seriesUid);
+        if (series_div && series_div.ImgDiv) {
+            let loadingLabel = series_div.ImgDiv.querySelector('.LeftImgLoadingLabel');
+            if (loadingLabel) {
+                // 添加淡出動畫
+                loadingLabel.style.transition = 'opacity 0.5s';
+                loadingLabel.style.opacity = '0';
+                setTimeout(() => {
+                    if (loadingLabel.parentNode) loadingLabel.parentNode.removeChild(loadingLabel);
+                }, 500);
+            }
+        }
+    }
+
+    if (!window.debouncedHideDicomStatus) {
+        window.debouncedHideDicomStatus = debounce(hideDicomStatus, 1500);
+    }
+    window.debouncedHideDicomStatus();
 }
 
 function hideDicomStatus() {
