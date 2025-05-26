@@ -59,7 +59,6 @@
                 let savedToken = localStorage.getItem("asusWebStorageToken");
                 if (savedToken) {
                     clearInterval(checkTokenInterval);
-                    readAllJson(readJson);
                 }
             }, 150);
         }
